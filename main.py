@@ -1,6 +1,13 @@
 from Visualize.visualize import Visualize as vl
+from WorldProcessing.readWorld import ReadWorld
 
+# World:
+# world has blocks, which has 'coor'(it's coordinate), 'north', 'south', 'west', 'east'
+# it's neighbor blocks(edges and corner will have some nan neighbors)
+# and action(0 is nothing, 'd' is drop and 'p' is pick up,
+# block and it's elements can be access with world[(x, y)]['key']
 
+# Visualization:
 # read_world(file_name) // read world from file
 # fill_world(file_name) // fill a world dictionary
 # visualize_gen(no_block_h, no_block_w, world) // Generate a picture
@@ -11,8 +18,8 @@ from Visualize.visualize import Visualize as vl
 
 def main():
     print('Hello')
+    h, w, world = ReadWorld().fill_world('testworld.txt')
     world_vl = vl()
-    h, w, world = world_vl.fill_world('testworld.txt')
 
     world_vl.visualize_gen(h, w, world)
     # fill_block((0, 0), 'green')
