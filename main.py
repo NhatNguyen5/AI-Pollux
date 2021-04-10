@@ -1,3 +1,5 @@
+import numpy as np
+
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 
@@ -19,12 +21,14 @@ from WorldProcessing.readWorld import ReadWorld
 def main():
     print('Hello')
     h, w, world = ReadWorld().fill_world('testworld.txt')
+    # print(world)
     world_vl = vl()
 
     world_vl.visualize_gen(h, w, world)
     # fill_block((0, 0), 'green')
     # write_block((0, 0), 'Hello', 'white', 'n')
     # put_x((0, 0), 'white')
+
 
     for r in range(w):
         for c in range(h):
@@ -33,6 +37,15 @@ def main():
             if world[(c, r)]['action'] == 'p':
                 world_vl.fill_block(world[(c, r)]['coor'], 'blue')
             world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
+
+
+    initial_state = (0, 0)
+
+    print(world[0, 1]['action'])
+    q_table = np.zeros((w, h, 6))
+    action = ['n', 's', 'w', 'e', 'p', 'd']
+
+
 
 
 if __name__ == '__main__':
