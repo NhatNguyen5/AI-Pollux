@@ -18,6 +18,24 @@ from WorldProcessing.readWorld import ReadWorld
 # put_x((x, y), 'color') // put a big X on the block
 
 
+def get_app_ops(world, x, y, has_block):
+    directions = ['north', 'south', 'west', 'east']
+    return_ops = []
+
+    if has_block:
+        if world[(x, y)]['action'] == "d" and world[(x, y)]['no_of_block'] < 4:
+            return_ops.append("d")
+        else:
+            for d in directions:
+                if world[(x, y)][d] != 'nan':
+                    return_ops.append(d)
+    else:
+        if world[(x, y)]['action'] == "p" and world[(x, y)]['no_of_block'] > 0:
+            return_ops.append("p")
+        for d in directions:
+            if world[(x, y)][d] != 'nan':
+                return_ops.append(d)
+
 def main():
     print('Hello')
     h, w, world = ReadWorld().fill_world('testworld.txt')

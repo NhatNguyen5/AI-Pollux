@@ -26,7 +26,7 @@ class ReadWorld:
     def fill_world(self, file_name):
         general_world = self.read_world(file_name)
         world = dict()
-        elements = ['coor', 'north', 'south', 'west', 'east', 'action']
+        elements = ['coor', 'north', 'south', 'west', 'east', 'action', 'no_of_blocks']
 
         no_block_h = len(general_world)
         no_block_w = len(general_world[0])
@@ -59,4 +59,9 @@ class ReadWorld:
                             world[(j, i)][e] = (j + 1, i)
                     if e == 'action':
                         world[(j, i)][e] = general_world[i][j]
+                    if e == 'no_of_blocks':
+                        if general_world[i][j] == 'p':
+                            world[(j, i)][e] = 8
+                        else:
+                            world[(j, i)][e] = 0
         return no_block_h, no_block_w, world
