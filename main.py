@@ -18,6 +18,19 @@ from WorldProcessing.readWorld import ReadWorld
 # put_x((x, y), 'color') // put a big X on the block
 
 
+def getApplicableOperators(world, x, y, hasBlock, blocksIn11, blocksIn15, blocksin33, blocksIn35, blocksIn33, blocksIn42, blocksIn55):
+    
+    directions = ['north', 'south', 'west', 'east']
+    return_dir = []
+
+    if (hasBlock):
+        if (world[(x, y)]['action'] == "d" and world[(x,y)]['no_of_block'] < 4):
+            return "d"
+        for d in directions:
+            if world[(x, y)][d] != 'nan':
+                return_dir.append(world[(x, y)][d]
+        
+
 def main():
     print('Hello')
     h, w, world = ReadWorld().fill_world('testworld.txt')
@@ -43,9 +56,33 @@ def main():
 
     print(world[0, 1]['action'])
     q_table = np.zeros((w, h, 6))
+    print(q_table)
     action = ['n', 's', 'w', 'e', 'p', 'd']
 
 
+    #  start episode
+
+    FIRST_STEPS = 500
+    SECOND_STEPS = 5500
+    policy = "PRANDOM"
+    # policy = "PEXPLOIT"
+    # policy = "PGREEDY"
+
+    current_state = initial_state
+
+# always use PRANDOM for first 500 steps
+    for _ in range(0, FIRST_STEPS):
+        applicable_operators = getApplicableOperators(world, x, y)
+
+# chose policy for next 5500 steps
+    # for _ in range(0, SECOND_STEPS):
+
+    
+    # action = np.argmax(q_table[state, :])
+    for e in world[(0, 0)]:
+        print(world[(0, 0)][e])
+
+    
 
 
 if __name__ == '__main__':
