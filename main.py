@@ -1,4 +1,5 @@
 import numpy as np
+from random import randint
 
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
@@ -18,18 +19,38 @@ from WorldProcessing.readWorld import ReadWorld
 # put_x((x, y), 'color') // put a big X on the block
 
 
-def getApplicableOperators(world, x, y, hasBlock, blocksIn11, blocksIn15, blocksin33, blocksIn35, blocksIn33, blocksIn42, blocksIn55):
+def getAppOps(world, x, y, has_block):
+
+    
     
     directions = ['north', 'south', 'west', 'east']
-    return_dir = []
+    return_ops = []
 
-    if (hasBlock):
-        if (world[(x, y)]['action'] == "d" and world[(x,y)]['no_of_block'] < 4):
-            return "d"
+    if has_block:
+        if world[(x, y)]['action'] == "d" and world[(x, y)]['no_of_blocks'] < 4:
+            return_ops.append("d")
+            return return_ops
+        else:
+            for d in directions:
+                if world[(x, y)][d] != 'nan':
+                    return_ops.append(d)
+    else:
+        if world[(x, y)]['action'] == "p" and world[(x, y)]['no_of_blocks'] > 0:
+            return_ops.append("p")
+            return return_ops
         for d in directions:
             if world[(x, y)][d] != 'nan':
-                return_dir.append(world[(x, y)][d]
-        
+                return_ops.append(d)
+
+    return return_ops
+
+def chooseRandom(app_operators):
+    if (app_operators[0] == "d"): return ["d", 13]
+    if (app_operators[0] == "p"): return ["p", 13]
+    index = randint(0, len(app_operators)-1)
+    return [app_operators[index], -1]
+
+
 
 def main():
     print('Hello')
@@ -56,31 +77,47 @@ def main():
 
     print(world[0, 1]['action'])
     q_table = np.zeros((w, h, 6))
-    print(q_table)
+    # print(q_table)
     action = ['n', 's', 'w', 'e', 'p', 'd']
 
 
     #  start episode
 
-    FIRST_STEPS = 500
+    FIRST_STEPS = 1
     SECOND_STEPS = 5500
     policy = "PRANDOM"
     # policy = "PEXPLOIT"
     # policy = "PGREEDY"
 
-    current_state = initial_state
-
+    has_block = False
+    x = 1
+    y = 2
+    
 # always use PRANDOM for first 500 steps
     for _ in range(0, FIRST_STEPS):
-        applicable_operators = getApplicableOperators(world, x, y)
+        if x > max(world)[0] or x < 0 or y > max(world)[1] or y < 0:
+            print('Out of bound')
+            break
+
+        app_operators = getAppOps(world, x, y, has_block)
+        print('applicable_operators:', app_operators)
+
+        chosen_op, reward = chooseRandom(app_operators)
+        print("action:", chosen_op)
+        print("reward:", reward)
+
+    # apply 'step' aka chosen_op 
+    # set new_state and reward from that state
+
+
 
 # chose policy for next 5500 steps
     # for _ in range(0, SECOND_STEPS):
 
     
     # action = np.argmax(q_table[state, :])
-    for e in world[(0, 0)]:
-        print(world[(0, 0)][e])
+    # for e in world[(0, 0)]:
+    #     print(world[(0, 0)][e])
 
     
 
