@@ -1,5 +1,6 @@
 from random import randint
 
+
 def getValidActions(world, x, y, has_block):
     directions = ['north', 'south', 'west', 'east']
     state_action = world[(x, y)]['action']
@@ -31,11 +32,12 @@ def chooseRandomAction(valid_actions):
 
 def actionNumber(action):
     if action == 'north': n = 0
-    if action == 'south': n = 1
-    if action == 'west': n = 2
-    if action == 'east': n = 3
-    if action == 'p': n = 4
-    if action == 'd': n = 5
+    elif action == 'south': n = 1
+    elif action == 'west': n = 2
+    elif action == 'east': n = 3
+    elif action == 'p': n = 4
+    elif action == 'd': n = 5
+    else: return print("actionNumber recieved invalid action:", action)
     return n
 
 def coordsNotValid(x, y, w, h):
@@ -89,3 +91,5 @@ def getStateFromCoords(x, y):
         if (y == 2 ): return 22
         if (y == 3 ): return 23
         if (y == 4 ): return 24
+
+
