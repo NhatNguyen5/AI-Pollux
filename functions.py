@@ -31,7 +31,7 @@ def chooseRandomAction(valid_actions):
     return [valid_actions[index], -1]
 
 
-def actionNumber(action):
+def actionToIndex(action):
     if action == 'north': n = 0
     elif action == 'east': n = 1
     elif action == 'south': n = 2
@@ -45,7 +45,6 @@ def coordsNotValid(x, y, w, h):
     if x > w or x < 0 or y > h or y < 0:
         print('coords are out of bound')
         return True
-
 
 def getStates(w, h):
     rows, cols = (h, w)

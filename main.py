@@ -6,22 +6,25 @@ from vis_funcs import *
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 
-global x
-global y
-global drop_off_loc
-global pick_up_loc
-global has_block
-global world
+FIRST_STEPS = 500
+SECOND_STEPS = 5500
 
+global x
 x = 0
+global y
 y = 4
+global drop_off_loc
 drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
+global pick_up_loc
 pick_up_loc = [(1, 3), (4, 2)]
+global has_block
 has_block = False
+global world
 h, w, world = ReadWorld().fill_world('testworld.txt')
 
-# states, given x and y, returns state for q_table
-# access state with states[x][y]
+
+# states, given x and y, returns state index for q_table
+# get index with states[x][y]
 states = getStates(w, h)
 
 # offset is diffence in q_table between row for a state, and the row for the same state when holding a block 
@@ -29,8 +32,8 @@ q_offset = w * h
 q_size = q_offset * 2
 q_table = np.zeros((q_size, 6))
 
-alpha = 0.5     # learning rate
-gamma = 0.2     # discount rate
+alpha = 0.3     # learning rate
+gamma = 0.5     # discount rate
 epsilon = 0.8   # chance of being greedy in exploit policy
 
 
@@ -52,7 +55,6 @@ def applyAction(action):
             print((x, y), 'is empty')
         has_block = True
 
-
 def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
     q_values_future_state = []
     i = 0
@@ -61,9 +63,6 @@ def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
         q_values_future_state.append(q_table[world[(x, y)][a]][i])
     n = actionToIndex(action)
     q_table[x, y][n] = (1 - alpha)*q_table[x, y][n] + alpha*(reward + gamma*max(q_values_future_state))
-
-def Q(state, action):
-    return (q_table[state][actionToIndex(action)])
 
 def bestValidAction(state, actions):
     max_val = -1
@@ -80,10 +79,12 @@ def bestValidAction(state, actions):
             bestAction = action
     return bestAction
 
+def Q(state, action):
+    return (q_table[state][actionToIndex(action)])
+
 def maxQ(state, actions):
     bestAction = bestValidAction(state, actions)
     return q_table[state][actionToIndex(bestAction)]
-
 
 def exploitAction(state, valid_actions, epsilon):
     if (valid_actions[0] == "d"): return ["d", 13]
@@ -99,9 +100,6 @@ def greedyAction(state, valid_actions):
 
 
 def main():
-
-    FIRST_STEPS = 500
-    SECOND_STEPS = 5500
     global x
     global y
     global drop_off_loc
@@ -124,8 +122,8 @@ def main():
 
 
     # always use PRANDOM for first 500 steps
-    for step in range(0, FIRST_STEPS):
-        # print(step, '{:.2f}%'.format((step / (FIRST_STEPS+SECOND_STEPS))*100))
+    for step1 in range(0, FIRST_STEPS):
+        # print(step1, '{:.2f}%'.format((step1 / (FIRST_STEPS+SECOND_STEPS))*100))
 
         # this "state" is used for q_table
         state = states[x][y]
@@ -155,14 +153,15 @@ def main():
         # if terminal state reached
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             print("\nTerminal state reached")
+            done = True
             break
 
         # break if the next x or y is not valid (should never happen)
         if (coordsNotValid(x, y, w, h)): break
 
-
-    for step in range(0, SECOND_STEPS):
-        # print(step, '{:.2f}%'.format(((step+FIRST_STEPS)/(FIRST_STEPS+SECOND_STEPS))*100))
+    if (done): 
+    for step2 in range(0, SECOND_STEPS):
+        # print(step2, '{:.2f}%'.format(((step2+FIRST_STEPS)/(FIRST_STEPS+SECOND_STEPS))*100))
 
         # this "state" is used for q_table
         state = states[x][y]
@@ -208,7 +207,7 @@ def main():
     updateWorld(h, w, world, world_vl)
 
     print(q_table)
-    print("\ncompleted in", step+1, "steps")
+    print("\ncompleted in", step1+1 + step2+1, "steps")
 
 
 
