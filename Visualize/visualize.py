@@ -42,12 +42,12 @@ class Visualize:
                            fill=color)
             img.save('world.png')
 
-    def write_block(self, coor=(0, 0), txt='text', t_color='white', pos='c'):
+    def write_block(self, coor=(0, 0), txt='text', t_color='white', pos='c', font_s=font_size):
         x = coor[0]
         y = coor[1]
         start_pixel_x = gap + x * (block_size + gap)
         start_pixel_y = gap + y * (block_size + gap)
-        font = ImageFont.truetype('arial.ttf', font_size)
+        font = ImageFont.truetype('arial.ttf', font_s)
         with Image.open("world.png") as img:
             draw = ImageDraw.Draw(img)
             text_w, text_h = draw.textsize(txt, font)
@@ -56,7 +56,7 @@ class Visualize:
                 start_pixel_y += gap / 2
             elif pos == 's':
                 start_pixel_x += (block_size - text_w) / 2
-                start_pixel_y += (block_size - gap * 3 / 2)
+                start_pixel_y += (block_size - gap * 3 / 2) - text_h / 2
             elif pos == 'w':
                 start_pixel_x += gap / 2
                 start_pixel_y += (block_size - text_h) / 2 - text_h / 2

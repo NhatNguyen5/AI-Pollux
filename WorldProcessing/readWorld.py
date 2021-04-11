@@ -31,37 +31,37 @@ class ReadWorld:
         no_block_h = len(general_world)
         no_block_w = len(general_world[0])
 
-        for i in range(no_block_h):
-            for j in range(no_block_w):
-                world[(j, i)] = dict()
+        for i in range(no_block_w):
+            for j in range(no_block_h):
+                world[(i, j)] = dict()
                 for e in elements:
                     if e == 'coor':
-                        world[(j, i)][e] = (j, i)
+                        world[(i, j)][e] = (i, j)
                     if e == 'north':
-                        if i == 0:
-                            world[(j, i)][e] = 'nan'
-                        else:
-                            world[(j, i)][e] = (j, i - 1)
-                    if e == 'south':
-                        if i == no_block_h:
-                            world[(j, i)][e] = 'nan'
-                        else:
-                            world[(j, i)][e] = (j, i + 1)
-                    if e == 'west':
                         if j == 0:
-                            world[(j, i)][e] = 'nan'
+                            world[(i, j)][e] = 'nan'
                         else:
-                            world[(j, i)][e] = (j - 1, i)
+                            world[(i, j)][e] = (i, j - 1)
+                    if e == 'south':
+                        if j == no_block_h - 1:
+                            world[(i, j)][e] = 'nan'
+                        else:
+                            world[(i, j)][e] = (i, j + 1)
+                    if e == 'west':
+                        if i == 0:
+                            world[(i, j)][e] = 'nan'
+                        else:
+                            world[(i, j)][e] = (i - 1, j)
                     if e == 'east':
-                        if j == no_block_w:
-                            world[(j, i)][e] = 'nan'
+                        if i == no_block_w-1:
+                            world[(i, j)][e] = 'nan'
                         else:
-                            world[(j, i)][e] = (j + 1, i)
+                            world[(i, j)][e] = (i + 1, j)
                     if e == 'action':
-                        world[(j, i)][e] = general_world[i][j]
+                        world[(i, j)][e] = general_world[j][i]
                     if e == 'no_of_blocks':
-                        if general_world[i][j] == 'p':
-                            world[(j, i)][e] = 8
+                        if general_world[j][i] == 'p':
+                            world[(i, j)][e] = 8
                         else:
-                            world[(j, i)][e] = 0
+                            world[(i, j)][e] = 0
         return no_block_h, no_block_w, world
