@@ -23,11 +23,12 @@ h, w, world = ReadWorld().fill_world('testworld.txt')
 # get index with states[x][y]
 states = getStates(w, h)
 
+
 # offset is diffence in q_table between row for a state, and the row for the same state when holding a block 
 q_offset = w * h
 q_table = np.zeros((q_offset*2, 6))
 
-alpha = 0.15     # learning rate
+alpha = 0.3     # learning rate
 gamma = 0.5     # discount rate
 epsilon = 0.8   # chance of being greedy in exploit policy
 
@@ -96,7 +97,7 @@ def greedyAction(state, valid_actions):
 def doSteps(steps, policy):
     global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
 
-    for step in range(0, FIRST_STEPS):
+    for step in range(0, steps):
         # this "state" is used for q_table
         state = states[x][y]
         if (has_block): state += q_offset
@@ -137,6 +138,11 @@ def doSteps(steps, policy):
 
         # break if the next x or y is not valid (should never happen)
         if (coordsNotValid(x, y, w, h)): break
+
+        # print('\n'*5)
+        # print(q_table)
+        # time.sleep(1)
+
     return step+1
 
 
@@ -155,8 +161,8 @@ def main():
     # always use PRANDOM for first 500 steps
     steps1 = doSteps(FIRST_STEPS, 'PRANDOM')
 
-    print("q_table after 500 steps")
-    print(q_table)
+    # print("q_table after 500 steps")
+    # print(q_table)
 
     # if terminal state was not reached in first 500 steps, keep going
     steps2 = 0
