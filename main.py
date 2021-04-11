@@ -20,21 +20,6 @@ has_block = False
 h, w, world = ReadWorld().fill_world('testworld.txt')
 
 
-# World:
-# world has blocks, which has 'coor'(it's coordinate), 'north', 'south', 'west', 'east'
-# it's neighbor blocks(edges and corner will have some nan neighbors)
-# and action(0 is nothing, 'd' is drop and 'p' is pick up,
-# block and it's elements can be access with world[(x, y)]['key']
-
-# Visualization:
-# read_world(file_name) // read world from file
-# fill_world(file_name) // fill a world dictionary
-# visualize_gen(no_block_h, no_block_w, world) // Generate a picture
-# fill_block((x, y), 'color') // fill block at x, y with color
-# write_block((x, y), txt, 'color', 'pos') // write a color txt to block at x, y, pos in the block (n, s, w, e, c)
-# put_x((x, y), 'color') // put a big X on the block
-
-
 def getValidActions(world, x, y, has_block):
     directions = ['north', 'south', 'west', 'east']
     return_ops = []
@@ -137,6 +122,11 @@ def main():
     # policy = "PEXPLOIT"
     # policy = "PGREEDY"
 
+    # offset is diffence in q_table between row for a state, and the row for the same state when holding a block 
+    q_offset = w * h
+    q_size = q_offset * 2
+    q_table = np.zeros((q_size, 6))
+
     print('Hello')
     world_vl = vl()
     world_vl.visualize_gen(h, w, world)
@@ -150,17 +140,15 @@ def main():
             world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
 
-    q_size = w*h*2
-    q_table = np.zeros((q_size, 6))
+
     # q_table = np.zeros((w*2, h, 6))
     action = ['n', 's', 'w', 'e', 'p', 'd']
 
-    q_table[(x,y), :] = 1
+
     q_table[x+1, 2] = 2
     q_table[(x+2), 3] = 3
     print(q_table)
     return
-
 
 
     world_vl.fill_block(world[(x, y)]['coor'], 'yellow')
