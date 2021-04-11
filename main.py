@@ -50,6 +50,11 @@ def chooseRandom(app_operators):
     index = randint(0, len(app_operators)-1)
     return [app_operators[index], -1]
 
+def applyAction(chosen_op):
+    # apply action 
+    # update q table here?
+    # return x and y of new state (return current state if 'd' or 'p')
+    pass
 
 
 def main():
@@ -106,6 +111,7 @@ def main():
         print("action:", chosen_op)
         print("reward:", reward)
 
+        applyAction()
     # apply 'step' aka chosen_op 
     # set new_state and reward from that state
 
