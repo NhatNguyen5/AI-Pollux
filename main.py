@@ -93,7 +93,7 @@ def greedyAction(state, valid_actions):
     if (valid_actions[0] == "p"): return ["p", 13]
     return [bestValidAction(state, valid_actions), -1]
 
-def makeSteps(steps, policy):
+def doSteps(steps, policy):
     global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
 
     for step in range(0, FIRST_STEPS):
@@ -153,7 +153,7 @@ def main():
     initWorld(h, w, world, world_vl, x, y)
 
     # always use PRANDOM for first 500 steps
-    steps1 = makeSteps(FIRST_STEPS, 'PRANDOM')
+    steps1 = doSteps(FIRST_STEPS, 'PRANDOM')
 
     print("q_table after 500 steps")
     print(q_table)
@@ -161,7 +161,7 @@ def main():
     # if terminal state was not reached in first 500 steps, keep going
     steps2 = 0
     if (done == False): 
-        steps2 = makeSteps(SECOND_STEPS, policy)
+        steps2 = doSteps(SECOND_STEPS, policy)
 
     print("\n\nq_table after completed")
     print(q_table)
