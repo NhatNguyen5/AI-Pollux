@@ -1,7 +1,7 @@
-import numpy as np
-from random import randint
-# import cv2 as cv
 import time
+import numpy as np
+from functions import * 
+from random import randint
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 
@@ -19,38 +19,6 @@ pick_up_loc = [(1, 3), (4, 2)]
 has_block = False
 h, w, world = ReadWorld().fill_world('testworld.txt')
 
-
-def getValidActions(world, x, y, has_block):
-    directions = ['north', 'south', 'west', 'east']
-    return_ops = []
-
-    if has_block:
-        if world[(x, y)]['action'] == "d" and world[(x, y)]['no_of_blocks'] < 4:
-            return_ops.append("d")
-            print("DELIVERED! (", x, y, ') has', world[(x, y)]['no_of_blocks'] + 1, 'blocks')
-            time.sleep(1)
-            return return_ops
-        else:
-            for d in directions:
-                if world[(x, y)][d] != 'nan':
-                    return_ops.append(d)
-    else:
-        if world[(x, y)]['action'] == "p" and world[(x, y)]['no_of_blocks'] > 0:
-            return_ops.append("p")
-            print("PICKED UP! (", x, y, ') has', world[(x, y)]['no_of_blocks'] - 1, 'blocks left')
-            time.sleep(1)
-            return return_ops
-        for d in directions:
-            if world[(x, y)][d] != 'nan':
-                return_ops.append(d)
-    return return_ops
-
-
-def chooseRandomAction(valid_actions):
-    if (valid_actions[0] == "d"): return ["d", 13]
-    if (valid_actions[0] == "p"): return ["p", 13]
-    index = randint(0, len(valid_actions) - 1)
-    return [valid_actions[index], -1]
 
 def getNextCoords(action):
     global world
