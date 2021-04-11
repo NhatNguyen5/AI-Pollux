@@ -56,8 +56,37 @@ def chooseRandom(app_operators):
     return [app_operators[index], -1]
 
 
+def actionNumber(action):
+    n = 0
+    if action == 'north':
+        n = 0
+    elif action == 'south':
+        n = 1
+    elif action == 'west':
+        n = 2
+    elif action == 'east':
+        n = 3
+    elif action == 'p':
+        n = 4
+    elif action == 'd':
+        n = 5
+    return n
+
+
+def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
+    q_values_future_state = []
+    i = 0
+    for a in app_op:
+        i = actionNumber(a)
+        q_values_future_state.append(q_table[world[(x, y)][a]][i])
+    n = actionNumber(action)
+    q_table[x, y][n] = (1 - alpha)*q_table[x, y][n] + alpha*(reward + gamma*max(q_values_future_state))
+
+
 def main():
     print('Hello')
+    alpha = 0.3
+    gamma = 0.5
     h, w, world = ReadWorld().fill_world('testworld.txt')
     # print(world)
     # for b in world:
@@ -82,8 +111,8 @@ def main():
 
     # print(world[0, 1]['action'])
     q_table = np.zeros((w, h, 6))
-    # print(q_table)
-    action = ['n', 's', 'w', 'e', 'p', 'd']
+    print(q_table)
+    # action = ['n', 's', 'w', 'e', 'p', 'd']
 
     #  start episode
 
@@ -115,6 +144,7 @@ def main():
         # print('applicable_operators:', app_operators)
 
         chosen_op, reward = chooseRandom(app_operators)
+        # updateQTable(q_table, world, )
         print("action:", chosen_op)
         if chosen_op == 'd':
             world[(x, y)]['no_of_blocks'] += 1
@@ -135,13 +165,14 @@ def main():
             t_y = world[(x, y)][chosen_op][1]
             x = t_x
             y = t_y
+
         # print('next location: ', x, y)
         world_vl.fill_block(world[(x, y)]['coor'], 'red')
         world_vl.write_block(world[(x, y)]['coor'], str(i_d), pos='s')
         # print("reward:", reward)
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             break
-        i_d += 1
+        # i_d += 1
 
     for r in range(h):
         for c in range(w):
@@ -153,9 +184,8 @@ def main():
                 world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
             world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
-
-
-
+    # updateQTable(q_table, world, x, y, reward, alpha, gamma, actions)
+    print(q_table[0, 0])
     # apply 'step' aka chosen_op
     # set new_state and reward from that state
 
