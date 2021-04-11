@@ -29,7 +29,8 @@ def getAppOps(world, x, y, has_block):
     if has_block:
         if world[(x, y)]['action'] == "d" and world[(x, y)]['no_of_blocks'] < 4:
             return_ops.append("d")
-            print("DELIVERED!")
+            print("DELIVERED! (", x, y, ') has', world[(x, y)]['no_of_blocks'] + 1, 'blocks')
+            time.sleep(1)
             return return_ops
         else:
             for d in directions:
@@ -38,7 +39,8 @@ def getAppOps(world, x, y, has_block):
     else:
         if world[(x, y)]['action'] == "p" and world[(x, y)]['no_of_blocks'] > 0:
             return_ops.append("p")
-            print("PICKED UP!")
+            print("PICKED UP! (", x, y, ') has', world[(x, y)]['no_of_blocks'] - 1, 'blocks left')
+            time.sleep(1)
             return return_ops
         for d in directions:
             if world[(x, y)][d] != 'nan':
@@ -119,14 +121,14 @@ def main():
             if world[(x, y)]['no_of_blocks'] == 4:
                 drop_off_loc.remove((x, y))
                 print((x, y), 'is full')
-                # time.sleep(3)
+                time.sleep(1)
             has_block = False
         elif chosen_op == 'p':
             world[(x, y)]['no_of_blocks'] -= 1
             if world[(x, y)]['no_of_blocks'] == 0:
                 pick_up_loc.remove((x, y))
                 print((x, y), 'is empty')
-                # time.sleep(3)
+                time.sleep(1)
             has_block = True
         else:
             t_x = world[(x, y)][chosen_op][0]
