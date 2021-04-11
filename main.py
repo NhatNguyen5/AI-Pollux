@@ -1,59 +1,134 @@
-import numpy as np
-from random import randint
-import cv2 as cv
 import time
-
+import numpy as np
+import random
+from functions import * 
+from vis_funcs import * 
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 
+FIRST_STEPS = 500
+SECOND_STEPS = 5500
 
-# World:
-# world has blocks, which has 'coor'(it's coordinate), 'north', 'south', 'west', 'east'
-# it's neighbor blocks(edges and corner will have some nan neighbors)
-# and action(0 is nothing, 'd' is drop and 'p' is pick up,
-# block and it's elements can be access with world[(x, y)]['key']
+global x,  y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
 
-# Visualization:
-# read_world(file_name) // read world from file
-# fill_world(file_name) // fill a world dictionary
-# visualize_gen(no_block_h, no_block_w, world) // Generate a picture
-# fill_block((x, y), 'color') // fill block at x, y with color
-# write_block((x, y), txt, 'color', 'pos') // write a color txt to block at x, y, pos in the block (n, s, w, e, c)
-# put_x((x, y), 'color') // put a big X on the block
+x = 0
+y = 4
+drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
+pick_up_loc = [(1, 3), (4, 2)]
+has_block = False
+done = False
+h, w, world = ReadWorld().fill_world('testworld.txt')
 
+# states, given x and y, returns state index for q_table
+# get index with states[x][y]
+states = getStates(w, h)
 
-def getAppOps(world, x, y, has_block):
-    directions = ['north', 'south', 'west', 'east']
-    return_ops = []
+# offset is diffence in q_table between row for a state, and the row for the same state when holding a block 
+q_offset = w * h
+q_table = np.zeros((q_offset*2, 6))
 
-    if has_block:
-        if world[(x, y)]['action'] == "d" and world[(x, y)]['no_of_blocks'] < 4:
-            return_ops.append("d")
-            print("DELIVERED! (", x, y, ') has', world[(x, y)]['no_of_blocks'] + 1, 'blocks')
-            time.sleep(1)
-            return return_ops
-        else:
-            for d in directions:
-                if world[(x, y)][d] != 'nan':
-                    return_ops.append(d)
-    else:
-        if world[(x, y)]['action'] == "p" and world[(x, y)]['no_of_blocks'] > 0:
-            return_ops.append("p")
-            print("PICKED UP! (", x, y, ') has', world[(x, y)]['no_of_blocks'] - 1, 'blocks left')
-            time.sleep(1)
-            return return_ops
-        for d in directions:
-            if world[(x, y)][d] != 'nan':
-                return_ops.append(d)
-
-    return return_ops
+alpha = 0.15     # learning rate
+gamma = 0.5     # discount rate
+epsilon = 0.8   # chance of being greedy in exploit policy
 
 
-def chooseRandom(app_operators):
-    if (app_operators[0] == "d"): return ["d", 13]
-    if (app_operators[0] == "p"): return ["p", 13]
-    index = randint(0, len(app_operators) - 1)
-    return [app_operators[index], -1]
+def applyAction(action):
+    global drop_off_loc
+    global pick_up_loc
+    global has_block
+    global world
+    if action == 'd':
+        world[(x, y)]['no_of_blocks'] += 1
+        if world[(x, y)]['no_of_blocks'] == 4:
+            drop_off_loc.remove((x, y))
+            print((x, y), 'is full')
+        has_block = False
+    elif action == 'p':
+        world[(x, y)]['no_of_blocks'] -= 1
+        if world[(x, y)]['no_of_blocks'] == 0:
+            pick_up_loc.remove((x, y))
+            print((x, y), 'is empty')
+        has_block = True
+
+def bestValidAction(state, actions):
+    max_val = -1
+    bestAction = actions[0]
+    for action in actions:
+        val = q_table[state][actionToIndex(action)]
+        # if two actions have the same val, pick a random one
+        if (val == max_val): 
+            # 50% chance of not changing action
+            if (random.uniform(0, 1) > 0.5): continue
+            bestAction = action
+        if val > max_val:
+            max_val = val
+            bestAction = action
+    return bestAction
+
+def Q(state, action):
+    return (q_table[state][actionToIndex(action)])
+
+def maxQ(state, actions):
+    bestAction = bestValidAction(state, actions)
+    return q_table[state][actionToIndex(bestAction)]
+
+def exploitAction(state, valid_actions, epsilon):
+    if (valid_actions[0] == "d"): return ["d", 13]
+    if (valid_actions[0] == "p"): return ["p", 13]
+    if (random.uniform(0, 1) > epsilon): 
+        return chooseRandomAction(valid_actions)
+    return [bestValidAction(state, valid_actions), -1]
+
+def greedyAction(state, valid_actions):
+    if (valid_actions[0] == "d"): return ["d", 13]
+    if (valid_actions[0] == "p"): return ["p", 13]
+    return [bestValidAction(state, valid_actions), -1]
+
+def doSteps(steps, policy):
+    global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
+
+    for step in range(0, FIRST_STEPS):
+        # this "state" is used for q_table
+        state = states[x][y]
+        if (has_block): state += q_offset
+
+        # list of all possible operations at current state
+        valid_actions = getValidActions(world, x, y, has_block)
+
+        if (policy == 'PRANDOM'):
+            action, reward = chooseRandomAction(valid_actions)
+        elif (policy == 'PEXPLOIT'):
+            action, reward = exploitAction(state, valid_actions, epsilon)
+        elif (policy == 'PGREEDY'):
+            action, reward = greedyAction(state, valid_actions)
+
+        # print("action:", action)
+
+        # has_block gets updated here
+        applyAction(action)
+
+        next_x, next_y = getNextCoords(action, world, x, y)
+        if (coordsNotValid(next_x, next_y, w, h)): break
+        next_valid_actions = getValidActions(world, next_x, next_y, has_block)        
+        next_state = states[next_x][next_y]
+        if (has_block): next_state += q_offset
+
+        # update qtable  
+        q_table[state][actionToIndex(action)] = round((1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions)), 4)
+
+        # 'move' to the next state
+        x = next_x
+        y = next_y
+
+        # if terminal state reached
+        if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
+            print("\nTerminal state reached")
+            done = True
+            break
+
+        # break if the next x or y is not valid (should never happen)
+        if (coordsNotValid(x, y, w, h)): break
+    return step+1
 
 
 def actionNumber(action):
@@ -84,120 +159,33 @@ def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
 
 
 def main():
-    print('Hello')
-    alpha = 0.3
-    gamma = 0.5
-    h, w, world = ReadWorld().fill_world('testworld.txt')
-    # print(world)
-    # for b in world:
-        # print(b, world[b]['east'])
-    world_vl = vl()
-
-    world_vl.visualize_gen(h, w, world)
-    # fill_block((0, 0), 'green')
-    # write_block((0, 0), 'Hello', 'white', 'n')
-    # put_x((0, 0), 'white')
-
-    for r in range(h):
-        for c in range(w):
-            if world[(c, r)]['action'] == 'd':
-                world_vl.fill_block(world[(c, r)]['coor'], 'green')
-            if world[(c, r)]['action'] == 'p':
-                world_vl.fill_block(world[(c, r)]['coor'], 'blue')
-            world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
-            world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
-
-    initial_state = (0, 0)
-
-    # print(world[0, 1]['action'])
-    q_table = np.zeros((w, h, 6))
-    print(q_table)
-    # action = ['n', 's', 'w', 'e', 'p', 'd']
-
-    #  start episode
-
-    FIRST_STEPS = 2000
-    SECOND_STEPS = 5500
-    policy = "PRANDOM"
-    # policy = "PEXPLOIT"
+    global world
+    
+    # policy = "PRANDOM"
+    policy = "PEXPLOIT"
     # policy = "PGREEDY"
 
-    has_block = False
-    x = 0
-    y = 4
-    world_vl.fill_block(world[(x, y)]['coor'], 'yellow')
-    world_vl.write_block(world[(x, y)]['coor'], 'start', 'black')
-
-    pick_up_loc = [(1, 3), (4, 2)]
-    drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
+    # build world in starting state
+    world_vl = vl()
+    world_vl.visualize_gen(h, w, world)
+    initWorld(h, w, world, world_vl, x, y)
 
     # always use PRANDOM for first 500 steps
-    # i_d = 0
-    for i_d in range(0, FIRST_STEPS):
-    #while True:
-        print(i_d, '{:.2f}%'.format((i_d / FIRST_STEPS)*100))
-        print('location: ', x, y)
-        if x > max(world)[0] or x < 0 or y > max(world)[1] or y < 0:
-            print('Out of bound')
-            break
-        app_operators = getAppOps(world, x, y, has_block)
-        # print('applicable_operators:', app_operators)
+    steps1 = doSteps(FIRST_STEPS, 'PRANDOM')
 
-        chosen_op, reward = chooseRandom(app_operators)
-        # updateQTable(q_table, world, )
-        print("action:", chosen_op)
-        if chosen_op == 'd':
-            world[(x, y)]['no_of_blocks'] += 1
-            if world[(x, y)]['no_of_blocks'] == 4:
-                drop_off_loc.remove((x, y))
-                print((x, y), 'is full')
-                time.sleep(1)
-            has_block = False
-        elif chosen_op == 'p':
-            world[(x, y)]['no_of_blocks'] -= 1
-            if world[(x, y)]['no_of_blocks'] == 0:
-                pick_up_loc.remove((x, y))
-                print((x, y), 'is empty')
-                time.sleep(1)
-            has_block = True
-        else:
-            t_x = world[(x, y)][chosen_op][0]
-            t_y = world[(x, y)][chosen_op][1]
-            x = t_x
-            y = t_y
+    print("q_table after 500 steps")
+    print(q_table)
 
-        # print('next location: ', x, y)
-        world_vl.fill_block(world[(x, y)]['coor'], 'red')
-        world_vl.write_block(world[(x, y)]['coor'], str(i_d), pos='s')
-        # print("reward:", reward)
-        if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
-            break
-        # i_d += 1
+    # if terminal state was not reached in first 500 steps, keep going
+    steps2 = 0
+    if (done == False): 
+        steps2 = doSteps(SECOND_STEPS, policy)
 
-    for r in range(h):
-        for c in range(w):
-            if world[(c, r)]['action'] == 'd':
-                world_vl.fill_block(world[(c, r)]['coor'], 'green')
-                world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
-            if world[(c, r)]['action'] == 'p':
-                world_vl.fill_block(world[(c, r)]['coor'], 'blue')
-                world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
-            world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
-            world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
-    # updateQTable(q_table, world, x, y, reward, alpha, gamma, actions)
-    print(q_table[0, 0])
-    # apply 'step' aka chosen_op
-    # set new_state and reward from that state
+    print("\n\nq_table after completed")
+    print(q_table)
+    print("\ncompleted in", steps1+steps2, "steps")
 
-
-# chose policy for next 5500 steps
-# for _ in range(0, SECOND_STEPS):
-
-
-# action = np.argmax(q_table[state, :])
-# for e in world[(0, 0)]:
-#     print(world[(0, 0)][e])
-
+    updateWorld(h, w, world, world_vl)
 
 if __name__ == '__main__':
     main()
