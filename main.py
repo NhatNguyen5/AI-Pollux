@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import random
 from functions import * 
 from vis_funcs import * 
 from Visualize.visualize import Visualize as vl
@@ -30,6 +31,7 @@ q_table = np.zeros((q_size, 6))
 
 alpha = 0.5     # learning rate
 gamma = 0.2     # discount rate
+epsilon = 0.8   # chance of being greedy in exploit policy
 
 
 def applyAction(action):
@@ -63,16 +65,33 @@ def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
 def Q(state, action):
     return (q_table[state][actionNumber(action)])
 
-def maxQ(state, actions):
-    max_val = 0.0
+def bestValidAction(state, actions):
+    max_val = -1
+    bestAction = actions[0]
     for action in actions:
         val = q_table[state][actionNumber(action)]
         if val > max_val:
             max_val = val
-    return max_val
+            bestAction = action
+    return bestAction
+
+def maxQ(state, actions):
+    bestAction = bestValidAction(state, actions)
+    return q_table[state][actionNumber(bestAction)]
+
+
+def exploitAction(state, valid_actions, epsilon):
+    if (valid_actions[0] == "d"): return ["d", 13]
+    if (valid_actions[0] == "p"): return ["p", 13]
+    if (random.uniform(0, 1) > epsilon): 
+        return chooseRandomAction(valid_actions)
+    return [bestValidAction(state, valid_actions), -1]
+
 
 
 def main():
+
+
     FIRST_STEPS = 500
     SECOND_STEPS = 5500
     global x
@@ -86,9 +105,9 @@ def main():
     next_x = -1
     next_y = -1
     
-    policy = 0 # "PRANDOM"
-    # policy = 1 # "PEXPLOIT"
-    # policy = 2 # "PGREEDY"
+    # policy = "PRANDOM"
+    policy = "PEXPLOIT"
+    # policy = "PGREEDY"
 
     # build world in starting state
     world_vl = vl()
@@ -96,10 +115,9 @@ def main():
     initWorld(h, w, world, world_vl, x, y)
 
 
-
     # always use PRANDOM for first 500 steps
     for step in range(0, FIRST_STEPS):
-        print(step, '{:.2f}%'.format((step / FIRST_STEPS+SECOND_STEPS)*100))
+        print(step, '{:.2f}%'.format((step / (FIRST_STEPS+SECOND_STEPS))*100))
 
         # this "state" is used for q_table
         state = states[x][y]
@@ -107,28 +125,22 @@ def main():
 
         # list of all possible operations at current state
         valid_actions = getValidActions(world, x, y, has_block)
-
+        
         action, reward = chooseRandomAction(valid_actions)
         print("action:", action)
 
         # has_block gets updated here
         applyAction(action)
 
-
         next_x, next_y = getNextCoords(action, world, x, y)
         next_valid_actions = getValidActions(world, next_x, next_y, has_block)        
         next_state = states[next_x][next_y]
         if (has_block): next_state += q_offset
 
-        # update qtable
-        # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s’,a’) — Q(s,a)]
-
-        
+        # update qtable  
         q_table[state][actionNumber(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
-        
 
-        # q_table[state, action] = q_table[state, action] + lr * (reward + gamma * np.max(q_table[new_state, :]) — q_table[state, action])
-        
+        # 'move' to the next state
         x = next_x
         y = next_y
 
@@ -141,6 +153,47 @@ def main():
         if (coordsNotValid(x, y, w, h)): break
 
 
+    for step in range(0, SECOND_STEPS):
+        print(step, '{:.2f}%'.format(((step+FIRST_STEPS)/(FIRST_STEPS+SECOND_STEPS))*100))
+
+        # this "state" is used for q_table
+        state = states[x][y]
+        if (has_block): state += q_offset
+
+        # list of all possible operations at current state
+        valid_actions = getValidActions(world, x, y, has_block)
+
+        if (policy == 'PRANDOM'):
+            action, reward = chooseRandomAction(valid_actions)
+        elif (policy == 'PEXPLOIT'):
+            action, reward = exploitAction(state, valid_actions, epsilon)
+        elif (policy == 'PGREEDY'):
+            action, reward = chooseRandomAction(valid_actions)
+        print("action:", action)
+
+
+        # has_block gets updated here
+        applyAction(action)
+
+        next_x, next_y = getNextCoords(action, world, x, y)
+        next_valid_actions = getValidActions(world, next_x, next_y, has_block)        
+        next_state = states[next_x][next_y]
+        if (has_block): next_state += q_offset
+
+        # update qtable  
+        q_table[state][actionNumber(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
+
+        # 'move' to the next state
+        x = next_x
+        y = next_y
+
+        # if terminal state reached
+        if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
+            print("\nTerminal state reached")
+            break
+
+        # break if the next x or y is not valid (should never happen)
+        if (coordsNotValid(x, y, w, h)): break
 
 
     updateWorld(h, w, world, world_vl)

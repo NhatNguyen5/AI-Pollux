@@ -30,6 +30,7 @@ def chooseRandomAction(valid_actions):
     index = randint(0, len(valid_actions) - 1)
     return [valid_actions[index], -1]
 
+
 def actionNumber(action):
     if action == 'north': n = 0
     elif action == 'south': n = 1
@@ -37,7 +38,7 @@ def actionNumber(action):
     elif action == 'east': n = 3
     elif action == 'p': n = 4
     elif action == 'd': n = 5
-    else: return print("actionNumber recieved invalid action:", action)
+    else: return print("actionNumber recieved invalid action: '" + str(action) + "'")
     return n
 
 def coordsNotValid(x, y, w, h):
