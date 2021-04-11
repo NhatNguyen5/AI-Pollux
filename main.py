@@ -13,7 +13,7 @@ global has_block
 global world
 
 x = 0
-y = 4
+y = 0
 drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
 pick_up_loc = [(1, 3), (4, 2)]
 has_block = False
@@ -94,7 +94,32 @@ def applyAction(action):
             time.sleep(1)
         has_block = True
 
-    
+def actionNumber(action):
+    n = 0
+    if action == 'north':
+        n = 0
+    elif action == 'south':
+        n = 1
+    elif action == 'west':
+        n = 2
+    elif action == 'east':
+        n = 3
+    elif action == 'p':
+        n = 4
+    elif action == 'd':
+        n = 5
+    return n
+
+def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
+    q_values_future_state = []
+    i = 0
+    for a in app_op:
+        i = actionNumber(a)
+        q_values_future_state.append(q_table[world[(x, y)][a]][i])
+    n = actionNumber(action)
+    q_table[x, y][n] = (1 - alpha)*q_table[x, y][n] + alpha*(reward + gamma*max(q_values_future_state))
+
+
 def main():
     global x
     global y
@@ -125,8 +150,18 @@ def main():
             world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
 
-    q_table = np.zeros((w, h, 6))
+    q_size = w*h*2
+    q_table = np.zeros((q_size, 6))
+    # q_table = np.zeros((w*2, h, 6))
     action = ['n', 's', 'w', 'e', 'p', 'd']
+
+    q_table[(x,y), :] = 1
+    q_table[x+1, 2] = 2
+    q_table[(x+2), 3] = 3
+    print(q_table)
+    return
+
+
 
     world_vl.fill_block(world[(x, y)]['coor'], 'yellow')
     world_vl.write_block(world[(x, y)]['coor'], 'start', 'black')
@@ -154,6 +189,8 @@ def main():
         next_x, next_y = getNextCoords(action)
 
         # update qtable
+
+        
 
         x = next_x
         y = next_y
