@@ -33,9 +33,9 @@ def chooseRandomAction(valid_actions):
 
 def actionNumber(action):
     if action == 'north': n = 0
-    elif action == 'south': n = 1
-    elif action == 'west': n = 2
-    elif action == 'east': n = 3
+    elif action == 'east': n = 1
+    elif action == 'south': n = 2
+    elif action == 'west': n = 3
     elif action == 'p': n = 4
     elif action == 'd': n = 5
     else: return print("actionNumber recieved invalid action: '" + str(action) + "'")

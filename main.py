@@ -57,19 +57,24 @@ def updateQTable(q_table, world, x, y, reward, alpha, gamma, action, app_op):
     q_values_future_state = []
     i = 0
     for a in app_op:
-        i = actionNumber(a)
+        i = actionToIndex(a)
         q_values_future_state.append(q_table[world[(x, y)][a]][i])
-    n = actionNumber(action)
+    n = actionToIndex(action)
     q_table[x, y][n] = (1 - alpha)*q_table[x, y][n] + alpha*(reward + gamma*max(q_values_future_state))
 
 def Q(state, action):
-    return (q_table[state][actionNumber(action)])
+    return (q_table[state][actionToIndex(action)])
 
 def bestValidAction(state, actions):
     max_val = -1
     bestAction = actions[0]
     for action in actions:
-        val = q_table[state][actionNumber(action)]
+        val = q_table[state][actionToIndex(action)]
+        # if two actions have the same val, pick a random one
+        if (val == max_val): 
+            # 50% chance of not changing action
+            if (random.uniform(0, 1) > 0.5): continue
+            bestAction = action
         if val > max_val:
             max_val = val
             bestAction = action
@@ -77,7 +82,7 @@ def bestValidAction(state, actions):
 
 def maxQ(state, actions):
     bestAction = bestValidAction(state, actions)
-    return q_table[state][actionNumber(bestAction)]
+    return q_table[state][actionToIndex(bestAction)]
 
 
 def exploitAction(state, valid_actions, epsilon):
@@ -87,10 +92,13 @@ def exploitAction(state, valid_actions, epsilon):
         return chooseRandomAction(valid_actions)
     return [bestValidAction(state, valid_actions), -1]
 
+def greedyAction(state, valid_actions):
+    if (valid_actions[0] == "d"): return ["d", 13]
+    if (valid_actions[0] == "p"): return ["p", 13]
+    return [bestValidAction(state, valid_actions), -1]
 
 
 def main():
-
 
     FIRST_STEPS = 500
     SECOND_STEPS = 5500
@@ -106,8 +114,8 @@ def main():
     next_y = -1
     
     # policy = "PRANDOM"
-    policy = "PEXPLOIT"
-    # policy = "PGREEDY"
+    # policy = "PEXPLOIT"
+    policy = "PGREEDY"
 
     # build world in starting state
     world_vl = vl()
@@ -117,7 +125,7 @@ def main():
 
     # always use PRANDOM for first 500 steps
     for step in range(0, FIRST_STEPS):
-        print(step, '{:.2f}%'.format((step / (FIRST_STEPS+SECOND_STEPS))*100))
+        # print(step, '{:.2f}%'.format((step / (FIRST_STEPS+SECOND_STEPS))*100))
 
         # this "state" is used for q_table
         state = states[x][y]
@@ -127,7 +135,7 @@ def main():
         valid_actions = getValidActions(world, x, y, has_block)
         
         action, reward = chooseRandomAction(valid_actions)
-        print("action:", action)
+        # print("action:", action)
 
         # has_block gets updated here
         applyAction(action)
@@ -138,7 +146,7 @@ def main():
         if (has_block): next_state += q_offset
 
         # update qtable  
-        q_table[state][actionNumber(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
+        q_table[state][actionToIndex(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
 
         # 'move' to the next state
         x = next_x
@@ -154,7 +162,7 @@ def main():
 
 
     for step in range(0, SECOND_STEPS):
-        print(step, '{:.2f}%'.format(((step+FIRST_STEPS)/(FIRST_STEPS+SECOND_STEPS))*100))
+        # print(step, '{:.2f}%'.format(((step+FIRST_STEPS)/(FIRST_STEPS+SECOND_STEPS))*100))
 
         # this "state" is used for q_table
         state = states[x][y]
@@ -168,7 +176,8 @@ def main():
         elif (policy == 'PEXPLOIT'):
             action, reward = exploitAction(state, valid_actions, epsilon)
         elif (policy == 'PGREEDY'):
-            action, reward = chooseRandomAction(valid_actions)
+            action, reward = greedyAction(state, valid_actions)
+
         print("action:", action)
 
 
@@ -181,7 +190,7 @@ def main():
         if (has_block): next_state += q_offset
 
         # update qtable  
-        q_table[state][actionNumber(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
+        q_table[state][actionToIndex(action)] = (1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions))
 
         # 'move' to the next state
         x = next_x
