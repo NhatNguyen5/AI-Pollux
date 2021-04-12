@@ -28,11 +28,11 @@ class ReadWorld:
         world = dict()
         elements = ['coor', 'north', 'south', 'west', 'east', 'action', 'no_of_blocks']
 
-        no_block_h = len(general_world)
-        no_block_w = len(general_world[0])
+        num_cells_h = len(general_world)
+        num_cells_w = len(general_world[0])
 
-        for i in range(no_block_w):
-            for j in range(no_block_h):
+        for i in range(num_cells_w):
+            for j in range(num_cells_h):
                 world[(i, j)] = dict()
                 for e in elements:
                     if e == 'coor':
@@ -43,7 +43,7 @@ class ReadWorld:
                         else:
                             world[(i, j)][e] = (i, j - 1)
                     if e == 'south':
-                        if j == no_block_h - 1:
+                        if j == num_cells_h - 1:
                             world[(i, j)][e] = 'nan'
                         else:
                             world[(i, j)][e] = (i, j + 1)
@@ -53,7 +53,7 @@ class ReadWorld:
                         else:
                             world[(i, j)][e] = (i - 1, j)
                     if e == 'east':
-                        if i == no_block_w-1:
+                        if i == num_cells_w-1:
                             world[(i, j)][e] = 'nan'
                         else:
                             world[(i, j)][e] = (i + 1, j)
@@ -64,4 +64,4 @@ class ReadWorld:
                             world[(i, j)][e] = 8
                         else:
                             world[(i, j)][e] = 0
-        return no_block_h, no_block_w, world
+        return num_cells_h, num_cells_w, world
