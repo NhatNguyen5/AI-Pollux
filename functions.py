@@ -33,8 +33,8 @@ def chooseRandomAction(valid_actions):
 
 def actionToIndex(action):
     if action == 'north': n = 0
-    elif action == 'east': n = 1
-    elif action == 'south': n = 2
+    elif action == 'south': n = 1
+    elif action == 'east': n = 2
     elif action == 'west': n = 3
     elif action == 'p': n = 4
     elif action == 'd': n = 5
@@ -61,6 +61,7 @@ def getStates(w, h):
 # probablly gonna make something better 
 # (update: i did, see 'getStates')
 def getStateFromCoords(x, y):
+    '''
     if (x == 0):
         if (y == 0 ): return 0
         if (y == 1 ): return 1
@@ -91,5 +92,5 @@ def getStateFromCoords(x, y):
         if (y == 2 ): return 22
         if (y == 3 ): return 23
         if (y == 4 ): return 24
-
-
+    '''
+    return x * 5 + y
