@@ -36,12 +36,13 @@ def initQTableWorld(h, w, world, world_vl, x, y):
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 9, offset_u=10)
 
-def updateQTableWorld(h, w, world, world_vl):
+def updateQTableWorld(h, w, world, world_vl, x, y):
     for r in range(h):
         for c in range(w):
             if world[(c, r)]['action'] == 'd' or world[(c, r)]['action'] == 'p':
                 world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black',
                                      pos='s', font_s=10, offset_u=14)
+    world_vl.write_block(world[(x, y)]['coor'], 'a', 'red')
 
 
 def fillQValues(h, w, q_table, world_vl, has_block):

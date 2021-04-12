@@ -70,8 +70,14 @@ def main():
     q_table_with_block = vl()
     q_table_with_block.visualize_gen(h, w, world, 'q_table_with_block')
     initQTableWorld(h, w, world, q_table_with_block, start_x, start_y)
-    updateQTableWorld(h, w, world, q_table_with_block)
+    updateQTableWorld(h, w, world, q_table_with_block, x, y)
     fillQValues(h, w, q_table, q_table_with_block, True)
+
+    q_table_no_block = vl()
+    q_table_no_block.visualize_gen(h, w, world, 'q_table_no_block')
+    initQTableWorld(h, w, world, q_table_no_block, start_x, start_y)
+    updateQTableWorld(h, w, world, q_table_no_block, x, y)
+    fillQValues(h, w, q_table, q_table_no_block, False)
 
 
 def applyAction(action):
