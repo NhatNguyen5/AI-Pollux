@@ -28,7 +28,6 @@ class Visualize:
             draw.line([(start_p_c, 0), (start_p_c, img_h)], fill=0, width=gap + 1)
 
         img.save('%s.png' % f_name)
-        print('Done initialize visual')
 
     def fill_block(self, coor=(0, 0), color='white'):
         f_name = self.name

@@ -152,7 +152,6 @@ def doSteps(steps, policy):
 
         action = ''
         reward = -1
-        print(valid_actions)
 
         if (policy == 'PRANDOM'):
             action, reward = chooseRandomAction(valid_actions)
@@ -160,8 +159,7 @@ def doSteps(steps, policy):
             action, reward = exploitAction(state, valid_actions, epsilon)
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
-        print(action)
-        # print("action:", action)
+
 
         # has_block gets updated here
         applyAction(action)
@@ -177,7 +175,6 @@ def doSteps(steps, policy):
             round((1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions)), 2)
 
         # keep track of prev state for step visualize part
-
         prev_x = x
         prev_y = y
 
@@ -186,6 +183,7 @@ def doSteps(steps, policy):
         y = next_y
 
         # if terminal state reached
+        # reset world, put agent back at start
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             print("\nTerminal state reached")
             done = True
@@ -196,6 +194,10 @@ def doSteps(steps, policy):
             has_block = False
             done = False
             _, _, world = ReadWorld().fill_world('testworld.txt')
+            updateDropAndPickSpots(h, w, q_table, False,
+                                   drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
+            updateDropAndPickSpots(h, w, q_table, True,
+                                   drop_off_loc, pick_up_loc, vis_objs['q_table_with_block'], world)
             print('episode ', episode, '| agent takes:', count_steps)
             print('q_table after:')
             print(q_table)
@@ -213,29 +215,33 @@ def doSteps(steps, policy):
         count_steps += 1
 
         # visualize each step
-        if steps != 500:
+        watch = True
+
+        if steps != 500 and watch:
             print('\n' * 5)
             # print(q_table)
+            print(valid_actions)
+            print('action: {:5s}'.format(action), '| reward:', reward)
             if has_block:
-                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
-                           has_block, prev_x, prev_y, start_x, start_y)
+                cv.destroyWindow('With no block')
                 updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
                            has_block, prev_x, prev_y, start_x, start_y)
                 putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y)
                 img_b = cv.imread('q_table_with_block.png')
-                cv.destroyWindow('With no block')
                 cv.imshow('With block', img_b)
                 cv.waitKey(0)
-            else:
                 updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
-                           has_block, prev_x, prev_y, start_x, start_y)
+                           has_block, x, y, start_x, start_y)
+            else:
+                cv.destroyWindow('With block')
                 updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
                            has_block, prev_x, prev_y, start_x, start_y)
                 putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y)
                 img_nb = cv.imread('q_table_no_block.png')
-                cv.destroyWindow('With block')
                 cv.imshow('With no block', img_nb)
                 cv.waitKey(0)
+                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
+                           has_block, x, y, start_x, start_y)
 
     if step + 1 == SECOND_STEPS:
         print('episode ', episode, '| agent takes:', count_steps)
