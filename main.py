@@ -1,8 +1,8 @@
 import time
 import numpy as np
 import random
-from functions import * 
-from vis_funcs import * 
+from functions import *
+from vis_funcs import *
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 import cv2 as cv
@@ -31,14 +31,13 @@ vis_objs = dict()
 # get index with states[x][y]
 states = getStates(w, h)
 
-
-# offset is diffence in q_table between row for a state, and the row for the same state when holding a block 
+# offset is diffence in q_table between row for a state, and the row for the same state when holding a block
 q_offset = w * h
-q_table = np.zeros((q_offset*2, 6))
+q_table = np.zeros((q_offset * 2, 6))
 
-alpha = 0.3     # learning rate
-gamma = 0.5     # discount rate
-epsilon = 0.8   # chance of being greedy in exploit policy
+alpha = 0.3  # learning rate
+gamma = 0.5  # discount rate
+epsilon = 0.8  # chance of being greedy in exploit policy
 
 
 def main():
@@ -57,16 +56,12 @@ def main():
     steps1 = doSteps(FIRST_STEPS, 'PRANDOM')
 
     vis_objs['q_table_no_block'] = vl('q_table_no_block')
-    vis_objs['q_table_no_block'].visualize_gen(h, w)
-    initQTableWorld(h, w, world, vis_objs['q_table_no_block'], start_x, start_y)
-    updateQTableWorld(h, w, world, vis_objs['q_table_no_block'], x, y)
-    fillQValues(h, w, q_table, vis_objs['q_table_no_block'], False)
-
     vis_objs['q_table_with_block'] = vl('q_table_with_block')
-    vis_objs['q_table_with_block'].visualize_gen(h, w)
-    initQTableWorld(h, w, world, vis_objs['q_table_with_block'], start_x, start_y)
-    updateQTableWorld(h, w, world, vis_objs['q_table_with_block'], x, y)
-    fillQValues(h, w, q_table, vis_objs['q_table_with_block'], True)
+
+    vis_objs['agent_monitor'] = vl('agent_monitor')
+    vis_objs['agent_monitor'].visualize_gen(h, w)
+    initQTableWorld(h, w, world, vis_objs['agent_monitor'], start_x, start_y)
+    updateQTableWorld(h, w, world, vis_objs['agent_monitor'], x, y)
 
     # print("q_table after 500 steps")
     # print(q_table)
@@ -117,6 +112,7 @@ def applyAction(action):
             print((x, y), 'is empty')
         has_block = True
 
+
 def bestValidAction(state, actions):
     max_val = -1
     bestAction = actions[0]
@@ -132,12 +128,15 @@ def bestValidAction(state, actions):
             bestAction = action
     return bestAction
 
+
 def Q(state, action):
     return (q_table[state][actionToIndex(action)])
+
 
 def maxQ(state, actions):
     bestAction = bestValidAction(state, actions)
     return q_table[state][actionToIndex(bestAction)]
+
 
 def exploitAction(state, valid_actions, epsilon):
     if (valid_actions[0] == "d"): return ["d", 13]
@@ -146,15 +145,19 @@ def exploitAction(state, valid_actions, epsilon):
         return chooseRandomAction(valid_actions)
     return [bestValidAction(state, valid_actions), -1]
 
+
 def greedyAction(state, valid_actions):
     if (valid_actions[0] == "d"): return ["d", 13]
     if (valid_actions[0] == "p"): return ["p", 13]
     return [bestValidAction(state, valid_actions), -1]
 
+
 def doSteps(steps, policy):
     global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table, count_steps, episode
 
     step = 0
+    ntw = True  # from no block to with block
+    wtn = True  # from with block to no block
 
     for step in range(0, steps):
         # this "state" is used for q_table
@@ -174,7 +177,6 @@ def doSteps(steps, policy):
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
 
-
         # has_block gets updated here
         applyAction(action)
 
@@ -186,7 +188,7 @@ def doSteps(steps, policy):
 
         # update qtable
         q_table[state][actionToIndex(action)] = \
-            round((1-alpha)*Q(state, action) + alpha*(reward + gamma*maxQ(next_state, next_valid_actions)), 2)
+            round((1 - alpha) * Q(state, action) + alpha * (reward + gamma * maxQ(next_state, next_valid_actions)), 2)
 
         # keep track of prev state for step visualize part
         prev_x = x
@@ -198,9 +200,6 @@ def doSteps(steps, policy):
 
         # if terminal state reached
         # reset world, put agent back at start
-
-        ntw = 1  # from no block to with block
-        wtn = 1  # from with block to no block
 
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             print("\nTerminal state reached")
@@ -240,45 +239,40 @@ def doSteps(steps, policy):
             # print(q_table)
             print(valid_actions)
             print('action: {:5s}'.format(action), '| reward:', reward)
+            print('ntw:', ntw, '| wtn:', wtn)
             if has_block:
-                wtn += 1
-                if ntw == 1:
-                    updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
-                               False, prev_x, prev_y, start_x, start_y)
-                    ntw -= 1
-                cv.destroyWindow('With no block')
-                updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
+                wtn = True
+                if ntw:
+                    vis_objs['agent_monitor'].visualize_gen(h, w)
+                    initQTableWorld(h, w, world, vis_objs['agent_monitor'], start_x, start_y)
+                    updateQTableWorld(h, w, world, vis_objs['agent_monitor'], x, y)
+                    fillQValues(h, w, q_table, vis_objs['agent_monitor'], has_block)
+                    ntw = False
+                updateCell(h, w, q_table, world, vis_objs['agent_monitor'],
                            has_block, prev_x, prev_y, start_x, start_y)
-                putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
-                img_b = cv.imread('q_table_with_block.png')
-                cv.imshow('With block', img_b)
-                cv.waitKey(1)
-                updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
-                           has_block, prev_x, prev_y, start_x, start_y)
+                putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'ab')
 
             else:
-                ntw += 1
-                if wtn == 1:
-                    updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
-                               True, prev_x, prev_y, start_x, start_y)
-                    wtn -= 1
+                ntw = True
+                if wtn:
+                    vis_objs['agent_monitor'].visualize_gen(h, w)
+                    initQTableWorld(h, w, world, vis_objs['agent_monitor'], start_x, start_y)
+                    updateQTableWorld(h, w, world, vis_objs['agent_monitor'], x, y)
+                    fillQValues(h, w, q_table, vis_objs['agent_monitor'], has_block)
+                    wtn = False
                 cv.destroyWindow('With block')
-                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
+                updateCell(h, w, q_table, world, vis_objs['agent_monitor'],
                            has_block, prev_x, prev_y, start_x, start_y)
-                putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y, 'a')
-                img_nb = cv.imread('q_table_no_block.png')
-                cv.imshow('With no block', img_nb)
-                cv.waitKey(1)
-                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
-                           has_block, prev_x, prev_y, start_x, start_y)
-                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
-                           has_block, x, y, start_x, start_y)
+                putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'a')
+
+            img = cv.imread('agent_monitor.png')
+            cv.imshow('agent monitor', img)
+            cv.waitKey(1)
 
     if step + 1 == SECOND_STEPS:
         print('episode ', episode, '| agent takes:', count_steps)
-    return step+1
+    return step + 1
 
 
 if __name__ == '__main__':
     main()
-
