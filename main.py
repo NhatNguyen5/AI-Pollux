@@ -45,8 +45,8 @@ def main():
     global world
 
     # policy = "PRANDOM"
-    # policy = "PEXPLOIT"
-    policy = "PGREEDY"
+    policy = "PEXPLOIT"
+    # policy = "PGREEDY"
 
     # visualizing world in starting state
     vis_objs['world_vl'] = vl('world')
@@ -80,9 +80,23 @@ def main():
     print(q_table)
     print("\ncomplete", steps1 + steps2, "steps")
 
+    # update world
     updateWorld(h, w, world, vis_objs['world_vl'])
-
-    print(vis_objs['world_vl'], vis_objs['q_table_no_block'], vis_objs['q_table_with_block'])
+    # update final q_table with no block
+    vis_objs['q_table_no_block'].visualize_gen(h, w)
+    initQTableWorld(h, w, world, vis_objs['q_table_no_block'], start_x, start_y)
+    updateQTableWorld(h, w, world, vis_objs['q_table_no_block'], x, y)
+    fillQValues(h, w, q_table, vis_objs['q_table_no_block'], False)
+    # update final q_table with block
+    vis_objs['q_table_with_block'].visualize_gen(h, w)
+    initQTableWorld(h, w, world, vis_objs['q_table_with_block'], start_x, start_y)
+    updateQTableWorld(h, w, world, vis_objs['q_table_with_block'], x, y)
+    fillQValues(h, w, q_table, vis_objs['q_table_with_block'], True)
+    # update agent position
+    if has_block:
+        putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
+    else:
+        putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y, 'a')
 
 
 def applyAction(action):
@@ -184,6 +198,10 @@ def doSteps(steps, policy):
 
         # if terminal state reached
         # reset world, put agent back at start
+
+        ntw = 1  # from no block to with block
+        wtn = 1  # from with block to no block
+
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             print("\nTerminal state reached")
             done = True
@@ -198,8 +216,8 @@ def doSteps(steps, policy):
                                    drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
             updateDropAndPickSpots(h, w, q_table, True,
                                    drop_off_loc, pick_up_loc, vis_objs['q_table_with_block'], world)
-            print('episode ', episode, '| agent takes:', count_steps)
-            print('q_table after:')
+            print('episode ', episode, '| agent takes:', count_steps, 'steps')
+            print('q_table:')
             print(q_table)
             print('-------------------------------------------------')
             # reset episode steps
@@ -215,7 +233,7 @@ def doSteps(steps, policy):
         count_steps += 1
 
         # visualize each step
-        watch = True
+        watch = 0
 
         if steps != 500 and watch:
             print('\n' * 5)
@@ -223,23 +241,36 @@ def doSteps(steps, policy):
             print(valid_actions)
             print('action: {:5s}'.format(action), '| reward:', reward)
             if has_block:
+                wtn += 1
+                if ntw == 1:
+                    updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
+                               False, prev_x, prev_y, start_x, start_y)
+                    ntw -= 1
                 cv.destroyWindow('With no block')
                 updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
                            has_block, prev_x, prev_y, start_x, start_y)
-                putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y)
+                putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
                 img_b = cv.imread('q_table_with_block.png')
                 cv.imshow('With block', img_b)
-                cv.waitKey(0)
+                cv.waitKey(1)
                 updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
-                           has_block, x, y, start_x, start_y)
+                           has_block, prev_x, prev_y, start_x, start_y)
+
             else:
+                ntw += 1
+                if wtn == 1:
+                    updateCell(h, w, q_table, world, vis_objs['q_table_with_block'],
+                               True, prev_x, prev_y, start_x, start_y)
+                    wtn -= 1
                 cv.destroyWindow('With block')
                 updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
                            has_block, prev_x, prev_y, start_x, start_y)
-                putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y)
+                putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y, 'a')
                 img_nb = cv.imread('q_table_no_block.png')
                 cv.imshow('With no block', img_nb)
-                cv.waitKey(0)
+                cv.waitKey(1)
+                updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
+                           has_block, prev_x, prev_y, start_x, start_y)
                 updateCell(h, w, q_table, world, vis_objs['q_table_no_block'],
                            has_block, x, y, start_x, start_y)
 
