@@ -161,6 +161,21 @@ def greedyAction(state, valid_actions):
     return [bestValidAction(state, valid_actions), -1]
 
 
+def qLearning(state, action, reward, next_state, next_actions):
+    return Q(state, action) + alpha * (reward + gamma * (maxQ(next_state, next_actions) - Q(state, action)))
+
+
+def sarsa(state, action, reward, next_state, next_actions, policy):
+    if (policy == 'PRANDOM'):
+        next_action, _ = chooseRandomAction(next_actions)
+    elif (policy == 'PEXPLOIT'):
+        next_action, _ = exploitAction(state, next_actions, epsilon)
+    elif (policy == 'PGREEDY'):
+        next_action, _ = greedyAction(state, next_actions)
+
+    return Q(state, action) + alpha*(reward + gamma * (Q(next_state, next_action) - Q(state, action)))
+
+
 def doSteps(steps, policy):
     global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table, count_steps, episode
     '''
@@ -193,13 +208,14 @@ def doSteps(steps, policy):
 
         next_x, next_y = getNextCoords(action, world, x, y)
         if (coordsNotValid(next_x, next_y, w, h)): break
-        next_valid_actions = getValidActions(world, next_x, next_y, has_block)
+        next_actions = getValidActions(world, next_x, next_y, has_block)
         next_state = states[next_y][next_x]
         if (has_block): next_state += q_offset
 
         # update qtable
-        q_table[state][actionToIndex(action)] = \
-            (1 - alpha) * Q(state, action) + alpha * (reward + gamma * maxQ(next_state, next_valid_actions))
+        # q_table[state][actionToIndex(action)] = qLearning(state, action, reward, next_state, next_actions)
+
+        q_table[state][actionToIndex(action)] = sarsa(state, action, reward, next_state, next_actions, policy)
 
         # keep track of prev state for step visualize part
         prev_x = x
@@ -257,7 +273,7 @@ def doSteps(steps, policy):
         count_steps += 1
 
         # visualize each step
-        watch = 1
+        watch = 0
 
         if steps != 500 and watch:
             print('\n' * 5)
