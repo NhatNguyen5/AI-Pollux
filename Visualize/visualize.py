@@ -84,3 +84,16 @@ class Visualize:
             draw.line([(start_pixel_x + 1, start_pixel_y + block_size-1),
                        (start_pixel_x + block_size-1, start_pixel_y + 1)], fill=color, width=0)
         img.save('%s.png' % f_name)
+
+    def get_color(self, x, y):
+        f_name = self.name
+        start_pixel_x = gap + x * (block_size + gap) + 2
+        start_pixel_y = gap + y * (block_size + gap) + 1
+        with Image.open('%s.png' % f_name) as img:
+            img_rgb = img.convert("RGB")
+            color = img_rgb.getpixel((start_pixel_x, start_pixel_y))
+        r = color[0]
+        g = color[1]
+        b = color[2]
+        return r, g, b
+        # img.save('%s.png' % f_name)
