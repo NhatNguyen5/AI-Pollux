@@ -49,7 +49,7 @@ class Visualize:
         y = coor[1]
         start_pixel_x = gap + x * (block_size + gap)
         start_pixel_y = gap + y * (block_size + gap)
-        font = ImageFont.truetype('arial.ttf', font_s)
+        font = ImageFont.load_default()
         with Image.open('%s.png' % f_name) as img:
             draw = ImageDraw.Draw(img)
             text_w, text_h = draw.textsize(txt, font)

@@ -119,7 +119,8 @@ def applyAction(action):
 
 
 def bestValidAction(state, actions):
-    max_val = -1
+    # init max_val to first val in list
+    max_val = q_table[state][actionToIndex(actions[0])]
     bestAction = actions[0]
     for action in actions:
         val = q_table[state][actionToIndex(action)]
@@ -205,7 +206,6 @@ def doSteps(steps, policy):
 
         # if terminal state reached
         # reset world, put agent back at start
-
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
             print('episode ', episode, 'is done | agent takes:', count_steps, 'steps')
             print("\nTerminal state reached")
@@ -237,7 +237,7 @@ def doSteps(steps, policy):
         count_steps += 1
 
         # visualize each step
-        watch = 0
+        watch = 1
 
         if steps != 500 and watch:
             print('\n' * 5)
