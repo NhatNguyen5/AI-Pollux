@@ -9,8 +9,10 @@ import cv2 as cv
 
 FIRST_STEPS = 500
 SECOND_STEPS = 5500
-count_steps = 1
+count_steps = 0
 episode = 1
+
+random.seed(random.uniform(1, 1000))
 
 # global x,  y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
 
@@ -42,7 +44,7 @@ epsilon = 0.8  # chance of being greedy in exploit policy
 
 def main():
     global world
-
+    global episode
     # policy = "PRANDOM"
     policy = "PEXPLOIT"
     # policy = "PGREEDY"
@@ -73,7 +75,10 @@ def main():
 
     print("\n\nq_table after completed")
     print(q_table)
-    print("\ncomplete", steps1 + steps2, "steps")
+
+    if not done:
+        episode -= 1
+    print("\ncompleted", episode, 'episodes in', steps1 + steps2, "steps")
 
     # update world
     updateWorld(h, w, world, vis_objs['world_vl'])
@@ -188,7 +193,7 @@ def doSteps(steps, policy):
 
         # update qtable
         q_table[state][actionToIndex(action)] = \
-            round((1 - alpha) * Q(state, action) + alpha * (reward + gamma * maxQ(next_state, next_valid_actions)), 2)
+            (1 - alpha) * Q(state, action) + alpha * (reward + gamma * maxQ(next_state, next_valid_actions))
 
         # keep track of prev state for step visualize part
         prev_x = x
@@ -202,6 +207,7 @@ def doSteps(steps, policy):
         # reset world, put agent back at start
 
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:
+            print('episode ', episode, 'is done | agent takes:', count_steps, 'steps')
             print("\nTerminal state reached")
             done = True
             x = 0
@@ -215,12 +221,11 @@ def doSteps(steps, policy):
                                    drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
             updateDropAndPickSpots(h, w, q_table, True,
                                    drop_off_loc, pick_up_loc, vis_objs['q_table_with_block'], world)
-            print('episode ', episode, '| agent takes:', count_steps, 'steps')
             print('q_table:')
             print(q_table)
             print('-------------------------------------------------')
             # reset episode steps
-            count_steps = 1
+            count_steps = 0
             # count episode
             episode += 1
             # break
@@ -270,7 +275,8 @@ def doSteps(steps, policy):
             cv.waitKey(1)
 
     if step + 1 == SECOND_STEPS:
-        print('episode ', episode, '| agent takes:', count_steps)
+        print('episode ', episode, 'is not done | agent takes:', count_steps)
+        print('6000 steps reached')
     return step + 1
 
 

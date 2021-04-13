@@ -54,7 +54,7 @@ def fillQValues(h, w, q_table, world_vl, has_block):
         for c in range(h):
             state = getStateFromCoords(c, r) + q_offset
             for i, a in enumerate(action):
-                world_vl.write_block((r, c), str(q_table[state][i]), 'black',
+                world_vl.write_block((r, c), str(round(q_table[state][i], 2)), 'black',
                                      pos=a, font_s=10)
     print('Done filling q_table')
 
@@ -84,7 +84,7 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
         q_offset = w * h
     state = getStateFromCoords(prev_y, prev_x) + q_offset
     for i, a in enumerate(action):
-        world_vl.write_block((prev_x, prev_y), str(q_table[state][i]), 'black',
+        world_vl.write_block((prev_x, prev_y), str(round(q_table[state][i], 2)), 'black',
                              pos=a, font_s=10)
 
 
@@ -105,6 +105,6 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
             q_offset = w * h
         state = getStateFromCoords(c[1], c[0]) + q_offset
         for i, a in enumerate(action):
-            world_vl.write_block(c, str(q_table[state][i]), 'black',
+            world_vl.write_block(c, str(round(q_table[state][i], 2)), 'black',
                                  pos=a, font_s=10)
 
