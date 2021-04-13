@@ -27,6 +27,9 @@ has_block = False
 done = False
 h, w, world = ReadWorld().fill_world('testworld.txt')
 
+best_q_table = []
+best_steps = SECOND_STEPS
+
 vis_objs = dict()
 
 # states, given x and y, returns state index for q_table
@@ -159,7 +162,7 @@ def greedyAction(state, valid_actions):
 
 def doSteps(steps, policy):
     global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table, count_steps, episode
-
+    global best_q_table #
     step = 0
     ntw = True  # from no block to with block
     wtn = True  # from with block to no block
