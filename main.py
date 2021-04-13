@@ -213,7 +213,7 @@ def doSteps(steps, policy):
 
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:  # or (policy == 'PGREEDY' and steps == best_steps):
             print(q_table)
-            print('episode ', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
+            print('episode', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
             print("\nTerminal state reached")
             done = True
             x = 0
