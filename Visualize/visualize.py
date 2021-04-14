@@ -49,7 +49,11 @@ class Visualize:
         y = coor[1]
         start_pixel_x = gap + x * (block_size + gap)
         start_pixel_y = gap + y * (block_size + gap)
-        font = ImageFont.truetype('arial.ttf', font_s)
+        try:
+            font = ImageFont.truetype(r'arial.ttf', font_s)
+        except:
+            font = ImageFont.load_default()
+
         with Image.open('%s.png' % f_name) as img:
             draw = ImageDraw.Draw(img)
             text_w, text_h = draw.textsize(txt, font)
@@ -80,9 +84,9 @@ class Visualize:
         with Image.open('%s.png' % f_name) as img:
             draw = ImageDraw.Draw(img)
             draw.line([(start_pixel_x + 1, start_pixel_y + 1),
-                       (start_pixel_x + block_size-1, start_pixel_y + block_size-1)], fill=color, width=0)
-            draw.line([(start_pixel_x + 1, start_pixel_y + block_size-1),
-                       (start_pixel_x + block_size-1, start_pixel_y + 1)], fill=color, width=0)
+                       (start_pixel_x + block_size - 1, start_pixel_y + block_size - 1)], fill=color, width=0)
+            draw.line([(start_pixel_x + 1, start_pixel_y + block_size - 1),
+                       (start_pixel_x + block_size - 1, start_pixel_y + 1)], fill=color, width=0)
         img.save('%s.png' % f_name)
 
     def get_color(self, x, y):
@@ -96,4 +100,3 @@ class Visualize:
         g = color[1]
         b = color[2]
         return r, g, b
-        # img.save('%s.png' % f_name)

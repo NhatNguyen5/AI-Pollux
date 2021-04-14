@@ -9,7 +9,7 @@ def initWorld(h, w, world, world_vl, x, y):
             if world[(c, r)]['action'] == 'p': world_vl.fill_block(world[(c, r)]['coor'], 'dodgerblue')
             if(r == y and c == x):
                 world_vl.fill_block(world[(x, y)]['coor'], 'gold')
-                world_vl.write_block(world[(x, y)]['coor'], 'start', 'black')
+                world_vl.write_block(world[(x, y)]['coor'], 'start', 'indigo')
             else:
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
@@ -30,7 +30,7 @@ def initQTableWorld(h, w, world, world_vl, x, y):
             if (r == y and c == x):
                 world_vl.fill_block(world[(x, y)]['coor'], 'gold')
                 world_vl.put_x((c, r), 'purple')
-                world_vl.write_block(world[(x, y)]['coor'], 'start', 'black', font_s=12)
+                world_vl.write_block(world[(x, y)]['coor'], 'start', 'indigo', font_s=12)
             else:
                 world_vl.fill_block(world[(x, y)]['coor'], world_vl.get_color(x, y))
                 world_vl.put_x((c, r), 'purple')
@@ -46,10 +46,11 @@ def fillQValues(h, w, q_table, world, world_vl, has_block, start_x, start_y):
 
 def putAgent(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y, agent_name='a'):
     updateCell(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y)
-    world_vl.write_block(world[(x, y)]['coor'], str(agent_name), 'red')
+    world_vl.write_block(world[(x, y)]['coor'], str(agent_name), 'red', font_s=20)
 
 def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_x, start_y, is_fillQ=False):
-    action = ['n', 's', 'e', 'w']
+    # actions = ['n', 's', 'e', 'w']
+    actions = []
     q_offset = 0
     if is_fillQ:
         world_vl.fill_block(world[(prev_x, prev_y)]['coor'], world_vl.get_color(prev_x, prev_y))
@@ -60,7 +61,7 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
     if (prev_y == start_y and prev_x == start_x):
         world_vl.fill_block(world[(prev_x, prev_y)]['coor'], 'gold')
         world_vl.put_x((prev_x, prev_y), 'purple')
-        world_vl.write_block(world[(prev_x, prev_y)]['coor'], 'start', 'black', font_s=12)
+        world_vl.write_block(world[(prev_x, prev_y)]['coor'], 'start', 'indigo', font_s=12)
     else:
         world_vl.put_x((prev_x, prev_y), 'purple')
         world_vl.write_block(world[(prev_x, prev_y)]['coor'], world[(prev_x, prev_y)]['action'], 'white')
@@ -72,14 +73,38 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
     if (has_block == True):
         q_offset = w * h
     state = getStateFromCoords(prev_y, prev_x) + q_offset
-    for i, a in enumerate(action):
-        world_vl.write_block((prev_x, prev_y), str(round(q_table[state][i], 2)), 'black',
-                             pos=a, font_s=10)
+    valid_actions = getValidActions(world, prev_x, prev_y, has_block)
+    if valid_actions[0] == 'd' or valid_actions[0] == 'p':
+        valid_actions = getValidActions(world, prev_x, prev_y, not has_block)
+    check_max_list = []
+    for va in valid_actions:
+        i = actionToIndex(va)
+        if va == 'north':
+            check_max_list.append(q_table[state][i])
+            actions.append('n')
+        elif va == 'south':
+            check_max_list.append(q_table[state][i])
+            actions.append('s')
+        elif va == 'east':
+            check_max_list.append(q_table[state][i])
+            actions.append('e')
+        elif va == 'west':
+            check_max_list.append(q_table[state][i])
+            actions.append('w')
+    for va, a in zip(valid_actions, actions):
+        i = actionToIndex(va)
+        max_q_value = max(check_max_list)
+        if q_table[state][i] != max_q_value:
+            world_vl.write_block((prev_x, prev_y), str(round(q_table[state][i], 2)), 'black',
+                                 pos=a, font_s=10)
+        else:
+            world_vl.write_block((prev_x, prev_y), str(round(q_table[state][i], 2)), 'maroon',
+                                 pos=a, font_s=10)
 
 
 def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, world_vl, world):
     loc_list = drop_off_loc + pick_up_loc
-    action = ['n', 's', 'e', 'w']
+    actions = []
     q_offset = 0
     for c in loc_list:
         if world[c]['action'] == 'd': world_vl.fill_block(world[c]['coor'], 'forestgreen')
@@ -93,9 +118,33 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
         if (has_block == True):
             q_offset = w * h
         state = getStateFromCoords(c[1], c[0]) + q_offset
-        for i, a in enumerate(action):
-            world_vl.write_block(c, str(round(q_table[state][i], 2)), 'black',
-                                 pos=a, font_s=10)
+        valid_actions = getValidActions(world, c[0], c[1], has_block)
+        if valid_actions[0] == 'd' or valid_actions[0] == 'p':
+            valid_actions = getValidActions(world, c[0], c[1], not has_block)
+        check_max_list = []
+        for va in valid_actions:
+            i = actionToIndex(va)
+            if va == 'north':
+                check_max_list.append(q_table[state][i])
+                actions.append('n')
+            elif va == 'south':
+                check_max_list.append(q_table[state][i])
+                actions.append('s')
+            elif va == 'east':
+                check_max_list.append(q_table[state][i])
+                actions.append('e')
+            elif va == 'west':
+                check_max_list.append(q_table[state][i])
+                actions.append('w')
+        for va, a in zip(valid_actions, actions):
+            i = actionToIndex(va)
+            max_q_value = max(check_max_list)
+            if q_table[state][i] != max_q_value:
+                world_vl.write_block(c, str(round(q_table[state][i], 2)), 'black',
+                                     pos=a, font_s=10)
+            else:
+                world_vl.write_block(c, str(round(q_table[state][i], 2)), 'maroon',
+                                     pos=a, font_s=10)
 
 
 def pathen(x, y, world_vl):

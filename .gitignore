@@ -7,3 +7,7 @@ __pycache__/vis_funcs.cpython-39.pyc
 world.png
 world.png
 .vscode/settings.json
+WorldProcessing/__pycache__/readWorld.cpython-39.pyc
+Visualize/__pycache__/visualize.cpython-39.pyc
+q_table_with_block.png
+q_table_no_block.png
