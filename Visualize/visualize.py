@@ -1,8 +1,8 @@
 from PIL import Image, ImageDraw, ImageFont
 
-gap = 9
-block_size = 75
-font_size = 20
+gap = 7
+block_size = 65
+font_size = 18
 
 
 class Visualize:

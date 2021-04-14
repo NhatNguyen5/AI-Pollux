@@ -35,7 +35,7 @@ def initQTableWorld(h, w, world, world_vl, x, y):
                 world_vl.fill_block(world[(x, y)]['coor'], world_vl.get_color(x, y))
                 world_vl.put_x((c, r), 'purple')
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
-            world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 9, offset_u=10)
+            world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 9, offset_u=8)
     print('Done initializing q_table')
 
 def fillQValues(h, w, q_table, world, world_vl, has_block, start_x, start_y):
@@ -65,7 +65,7 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
         world_vl.put_x((prev_x, prev_y), 'purple')
         world_vl.write_block(world[(prev_x, prev_y)]['coor'], world[(prev_x, prev_y)]['action'], 'white')
         world_vl.write_block(world[(prev_x, prev_y)]['coor'],
-                             str(world[(prev_x, prev_y)]['coor']), 'black', 'n', 9, offset_u=10)
+                             str(world[(prev_x, prev_y)]['coor']), 'black', 'n', 9, offset_u=8)
     if world[(prev_x, prev_y)]['action'] == 'd' or world[(prev_x, prev_y)]['action'] == 'p':
         world_vl.write_block(world[(prev_x, prev_y)]['coor'],
                              str(world[(prev_x, prev_y)]['no_of_blocks']), 'black', pos='s', font_s=9, offset_u=10)
@@ -87,7 +87,7 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
         world_vl.put_x(c, 'purple')
         world_vl.write_block(world[c]['coor'], world[c]['action'], 'white')
         world_vl.write_block(world[c]['coor'],
-                             str(world[c]['coor']), 'black', 'n', 9, offset_u=10)
+                             str(world[c]['coor']), 'black', 'n', 9, offset_u=8)
         world_vl.write_block(world[c]['coor'], str(world[c]['no_of_blocks']), 'black',
                              pos='s', font_s=9, offset_u=10)
         if (has_block == True):
@@ -100,4 +100,4 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
 
 def pathen(x, y, world_vl):
     r, g, b = world_vl.get_color(x, y)
-    return r + 4, g + 2, b
+    return r + 3, g + 2, b
