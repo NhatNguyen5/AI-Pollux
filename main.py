@@ -6,6 +6,7 @@ from vis_funcs import *
 from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 import cv2 as cv
+import matplotlib.pyplot as plt
 
 
 FIRST_STEPS = 500
@@ -48,13 +49,47 @@ alpha = 0.15  # learning rate
 gamma = 0.45  # discount rate
 epsilon = 0.7  # chance of being greedy in exploit policy
 
+# BANK ACCOUNT (USE FOR MEASURING PERFORMANCE)
+plot_steps = np.arange(SECOND_STEPS)  # step array use for plotting
+bank = []
+bank_account = [0]
+# put bank account in the bank
+def regBankAccount():
+    global bank_account
+    bank.append(bank_account)
+    bank_account = [0]
+    print('Put episode', episode, 'account in the bank')
+
+def plotPerformance():
+    print(len(bank), 'episodes')
+    max_len = []
+    for ba in bank:
+        max_len.append(len(ba))
+    for i, ba in enumerate(bank):
+        plt.plot(plot_steps[:max(max_len)],
+                 np.pad(ba, (0, max(max_len) - len(ba)),
+                        'constant', constant_values=ba[len(ba) - 1]), label='e%d' % (i + 1))
+    plt.xlabel('Steps')
+    plt.ylabel('Accumulated reward')
+    plt.legend()
+    plt.savefig('performance_plot.png')
+    plt.show()
+
+# ----------------------------------------------------------
+
+# DELIVERY STEPS (MEASURE PERFORMANCE)
+
+
+
+# ----------------------------------------------------------
+
 # 4th experiment enabler
 fourth_expm = 0
 
 # visualize each step
 watch = 0
 
-
+# GET USER INPUT
 def getAcceptedInput(question, accepted_inputs, return_values):
     user_input = input(question)
     while not (user_input in accepted_inputs):
@@ -66,13 +101,16 @@ def getAcceptedInput(question, accepted_inputs, return_values):
 
 def main():
     # take user input
-    global fourth_expm, watch
-    default = getAcceptedInput("Use default (SARSA, PEXPLOIT, no monitor)?\n(yes/no):", ['yes', 'no'], [True, False])
-
+    global fourth_expm, watch, drop_off_loc, pick_up_loc
+    default = getAcceptedInput("Use default (SARSA, PEXPLOIT, no monitor, plot)?\n(yes/no):",
+                               ['yes', 'no'], [True, False])
+    plot = False
+    policy = ''
     if default:
         method = "SARSA"
         policy = "PEXPLOIT"
         watch = False
+        plot = True
     else:
         method = getAcceptedInput("Which learning method?\n(Q_LEARNING/SARSA):",
                                   ["Q_LEARNING", "SARSA"], ["Q_LEARNING", "SARSA"])
@@ -81,6 +119,7 @@ def main():
             policy = getAcceptedInput("Which policy?\n(PRANDOM/PEXPLOIT/PGREEDY):",
                                       ["PRANDOM", "PEXPLOIT", "PGREEDY"], ["PRANDOM", "PEXPLOIT", "PGREEDY"])
         watch = getAcceptedInput("Monitor agent?\n(yes/no):", ['yes', 'no'], [True, False])
+        plot = getAcceptedInput("Plot performance graph?\n(yes/no):", ['yes', 'no'], [True, False])
 
     global world
     global episode
@@ -117,6 +156,9 @@ def main():
     # print("q_table after 500 steps")
     # print(q_table)
     if fourth_expm:
+        _, _, world = ReadWorld().fill_world('testworld.txt')
+        drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
+        pick_up_loc = [(1, 3), (4, 2)]
         policy = "PEXPLOIT"
     # if terminal state was not reached in first 500 steps, keep going
     steps2 = 0
@@ -149,7 +191,8 @@ def main():
         putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
     else:
         putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y, 'a')
-
+    if plot:
+        plotPerformance()
 
 def applyAction(action):
     global drop_off_loc
@@ -159,10 +202,12 @@ def applyAction(action):
     if action == 'd':
         world[(x, y)]['no_of_blocks'] += 1
         if world[(x, y)]['no_of_blocks'] == 4:
+            print(x, y)
             drop_off_loc.remove((x, y))
             # RECORD FIRST TIME A DROP OFF IS FULL
             if episode == 1 and len(drop_off_loc) == 3:
                 fillQValues(h, w, q_table, world, vis_objs['first_drop_off_full'], False, start_x, start_y)
+            # -------------------------
             print((x, y), 'is full')
         has_block = False
     elif action == 'p':
@@ -230,7 +275,8 @@ def sarsa(state, action, reward, next_state, next_actions, policy):
 
 
 def doSteps(steps, policy, method):
-    global x, y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table, count_steps, episode, watch
+    global x, y, drop_off_loc, pick_up_loc, has_block, \
+        done, world, q_offset, q_table, count_steps, episode, watch, bank_account
     '''
     global best_q_table, best_steps, best_episode  # EXPERIMENTAL FEATURE
     '''
@@ -255,9 +301,12 @@ def doSteps(steps, policy, method):
             action, reward = exploitAction(state, valid_actions, epsilon)
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
-
+        bank_account.append(bank_account[len(bank_account)-1]+reward)
         # has_block gets updated here
         applyAction(action)
+
+        # BANK THE REWARD
+
 
         next_x, next_y = getNextCoords(action, world, x, y)
         if (coordsNotValid(next_x, next_y, w, h)): break
@@ -282,9 +331,12 @@ def doSteps(steps, policy, method):
         # if terminal state reached
         # reset world, put agent back at start
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:  # or (policy == 'PGREEDY' and steps == best_steps):
+            # Put episode bank account in the bank
+            regBankAccount()
             # RECORD FIRST TERMINATE
             if episode == 1:
                 fillQValues(h, w, q_table, world, vis_objs['first_terminate'], False, start_x, start_y)
+            # ------------------------------
             print(q_table)
             print('episode', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
             print("\nTerminal state reached")
