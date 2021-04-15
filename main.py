@@ -45,12 +45,12 @@ best_steps = SECOND_STEPS  # EXPERIMENTAL FEATURE
 best_episode = 0  # EXPERIMENTAL FEATURE
 '''
 
-alpha = 0.15  # learning rate
-gamma = 0.45  # discount rate
-epsilon = 0.7  # chance of being greedy in exploit policy
+alpha = 0.3  # learning rate
+gamma = 0.5  # discount rate
+epsilon = 0.8  # chance of being greedy in exploit policy
 
 # BANK ACCOUNT (USE FOR MEASURING PERFORMANCE)
-plot_steps = np.arange(SECOND_STEPS)  # step array use for plotting
+bank_plot_steps = np.arange(SECOND_STEPS)  # step array use for plotting
 bank = []
 bank_account = [0]
 # put bank account in the bank
@@ -60,26 +60,50 @@ def regBankAccount():
     bank_account = [0]
     print('Put episode', episode, 'account in the bank')
 
-def plotPerformance():
+def plotPerformanceBank():
+    plt.figure(1)
     print(len(bank), 'episodes')
     max_len = []
     for ba in bank:
         max_len.append(len(ba))
     for i, ba in enumerate(bank):
-        plt.plot(plot_steps[:max(max_len)],
+        plt.plot(bank_plot_steps[:max(max_len)],
                  np.pad(ba, (0, max(max_len) - len(ba)),
                         'constant', constant_values=ba[len(ba) - 1]), label='e%d' % (i + 1))
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
-    plt.savefig('performance_plot.png')
-    plt.show()
+    plt.savefig('performance_bank_plot.png')
 
 # ----------------------------------------------------------
 
 # DELIVERY STEPS (MEASURE PERFORMANCE)
+delivery_plot_steps = np.arange(FIRST_STEPS + SECOND_STEPS)
+delivery_steps = 0
+prev_del_step = 0
+num_of_blocks_delivered = 0
+delivery_tracker = np.zeros(FIRST_STEPS + SECOND_STEPS)
 
+def plotPerformanceDelSteps():
+    plt.figure(2)
+    curr_nob = 0
+    last_pos = 0
+    for i, n in enumerate(delivery_tracker):
+        if curr_nob == 16:
+            curr_nob = -1
+        if n == curr_nob + 1:
+            curr_nob += 1
+            incre = 1/(i - last_pos)
+            for j in range(last_pos + 1, i):
+                delivery_tracker[j] = delivery_tracker[j-1] + incre
+            last_pos = i
 
+    for a in delivery_tracker:
+        print(a)
+    plt.plot(delivery_plot_steps, delivery_tracker)
+    plt.xlabel('Steps')
+    plt.ylabel('Block delivered')
+    plt.savefig('performance_del_steps_plot.png')
 
 # ----------------------------------------------------------
 
@@ -102,12 +126,11 @@ def getAcceptedInput(question, accepted_inputs, return_values):
 def main():
     # take user input
     global fourth_expm, watch, drop_off_loc, pick_up_loc
-    default = getAcceptedInput("Use default (SARSA, PEXPLOIT, no monitor, plot)?\n(yes/no):",
+    default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot)?\n(yes/no):",
                                ['yes', 'no'], [True, False])
-    plot = False
     policy = ''
     if default:
-        method = "SARSA"
+        method = "Q_LEARNING"
         policy = "PEXPLOIT"
         watch = False
         plot = True
@@ -191,18 +214,27 @@ def main():
         putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
     else:
         putAgent(h, w, q_table, world, vis_objs['q_table_no_block'], has_block, x, y, start_x, start_y, 'a')
+    # plot
     if plot:
-        plotPerformance()
+        plotPerformanceBank()
+        plotPerformanceDelSteps()
+        plt.show()
 
 def applyAction(action):
     global drop_off_loc
     global pick_up_loc
     global has_block
     global world
+    global num_of_blocks_delivered
     if action == 'd':
         world[(x, y)]['no_of_blocks'] += 1
+        # DELIVER BLOCK STEPS PERFORMANCE MEASURE
+        num_of_blocks_delivered += 1
+        delivery_tracker[delivery_steps] = num_of_blocks_delivered
+
+        # ----------------------------
+
         if world[(x, y)]['no_of_blocks'] == 4:
-            print(x, y)
             drop_off_loc.remove((x, y))
             # RECORD FIRST TIME A DROP OFF IS FULL
             if episode == 1 and len(drop_off_loc) == 3:
@@ -276,7 +308,8 @@ def sarsa(state, action, reward, next_state, next_actions, policy):
 
 def doSteps(steps, policy, method):
     global x, y, drop_off_loc, pick_up_loc, has_block, \
-        done, world, q_offset, q_table, count_steps, episode, watch, bank_account
+        done, world, q_offset, q_table, count_steps, episode, watch
+    global num_of_blocks_delivered, delivery_steps, bank_account
     '''
     global best_q_table, best_steps, best_episode  # EXPERIMENTAL FEATURE
     '''
@@ -285,6 +318,7 @@ def doSteps(steps, policy, method):
     wtn = True  # from with block to no block
 
     for step in range(0, steps):
+        delivery_steps += 1
         # this "state" is used for q_table
         state = states[y][x]
         if (has_block): state += q_offset
@@ -301,12 +335,12 @@ def doSteps(steps, policy, method):
             action, reward = exploitAction(state, valid_actions, epsilon)
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
-        bank_account.append(bank_account[len(bank_account)-1]+reward)
-        # has_block gets updated here
-        applyAction(action)
 
         # BANK THE REWARD
+        bank_account.append(bank_account[len(bank_account)-1]+reward)
 
+        # has_block gets updated here
+        applyAction(action)
 
         next_x, next_y = getNextCoords(action, world, x, y)
         if (coordsNotValid(next_x, next_y, w, h)): break
@@ -331,6 +365,8 @@ def doSteps(steps, policy, method):
         # if terminal state reached
         # reset world, put agent back at start
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:  # or (policy == 'PGREEDY' and steps == best_steps):
+            # RESET num_of_blocks_delivered
+            num_of_blocks_delivered = 0
             # Put episode bank account in the bank
             regBankAccount()
             # RECORD FIRST TERMINATE
