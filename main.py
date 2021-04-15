@@ -111,7 +111,7 @@ def plotPerformanceDelSteps():
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
     plt.savefig('performance_del_steps_plot.png')
-    
+
 def output_to_exel(df_marks):
     writer = pd.ExcelWriter('output' + '.xlsx')
     # write dataframe to excel
@@ -122,10 +122,13 @@ def output_to_exel(df_marks):
 # ----------------------------------------------------------
 
 # 4th experiment enabler
-fourth_expm = 0
+fourth_expm = False
 
 # visualize each step
-watch = 0
+watch = False
+
+# Ask for continue after each episode
+pit_stop = False
 
 # GET USER INPUT
 def getAcceptedInput(question, accepted_inputs, return_values):
@@ -139,24 +142,26 @@ def getAcceptedInput(question, accepted_inputs, return_values):
 
 def main():
     # take user input
-    global fourth_expm, watch, drop_off_loc, pick_up_loc
-    default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot)?\n(yes/no):",
-                               ['yes', 'no'], [True, False])
+    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc
+    default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot, no asking for continue)?"
+                               "\n(yes/no): ", ['yes', 'no'], [True, False])
     policy = ''
     if default:
         method = "Q_LEARNING"
         policy = "PEXPLOIT"
         watch = False
         plot = True
+        pit_stop = False
     else:
-        method = getAcceptedInput("Which learning method?\n(Q_LEARNING/SARSA):",
+        method = getAcceptedInput("Which learning method?\n(Q_LEARNING/SARSA): ",
                                   ["Q_LEARNING", "SARSA"], ["Q_LEARNING", "SARSA"])
-        fourth_expm = getAcceptedInput("Enable fourth experiment?\n(yes/no):", ['yes', 'no'], [True, False])
+        fourth_expm = getAcceptedInput("Enable fourth experiment?\n(yes/no): ", ['yes', 'no'], [True, False])
         if not fourth_expm:
-            policy = getAcceptedInput("Which policy?\n(PRANDOM/PEXPLOIT/PGREEDY):",
+            policy = getAcceptedInput("Which policy?\n(PRANDOM/PEXPLOIT/PGREEDY): ",
                                       ["PRANDOM", "PEXPLOIT", "PGREEDY"], ["PRANDOM", "PEXPLOIT", "PGREEDY"])
-        watch = getAcceptedInput("Monitor agent?\n(yes/no):", ['yes', 'no'], [True, False])
-        plot = getAcceptedInput("Plot performance graph?\n(yes/no):", ['yes', 'no'], [True, False])
+        watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
+        pit_stop = getAcceptedInput("Ask for continue after each terminate?\n(yes/no): ", ['yes', 'no'], [True, False])
+        plot = getAcceptedInput("Plot performance graph?\n(yes/no): ", ['yes', 'no'], [True, False])
 
     global world
     global episode
@@ -214,7 +219,7 @@ def main():
     if fourth_expm:
         vis_objs['world_vl'].visualize_gen(h, w)
         initWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
-    updateWorld(h, w, world, vis_objs['world_vl'])
+    updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
     # update final q_table with no block
     if fourth_expm:
         vis_objs['q_table_no_block'].visualize_gen(h, w)
@@ -332,7 +337,10 @@ def doSteps(steps, policy, method):
     wtn = True  # from with block to no block
 
     for step in range(0, steps):
+        # Register a step between delivery
         delivery_steps += 1
+        # Preferable path steps_count
+        world[(x, y)]['step_scores'] += 1
         # this "state" is used for q_table
         state = states[y][x]
         if (has_block): state += q_offset
@@ -387,24 +395,36 @@ def doSteps(steps, policy, method):
             if episode == 1:
                 fillQValues(h, w, q_table, world, vis_objs['first_terminate'], False, start_x, start_y)
             # ------------------------------
+
             print(q_table)
             print('episode', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
             print("\nTerminal state reached")
             episode_list.append(episode)
             steps_count_list.append(count_steps)
             terminal_reached.append('True')
+            # reset episode steps
+            count_steps = 0
             done = True
             x = 0
             y = 4
             has_block = False
             done = False
             drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
+            if watch:
+                if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
+                    vis_objs['agent_monitor'].snapshot(input("Save as: "))
+            if pit_stop:
+                if not getAcceptedInput("Continue?\n(yes/no): ", ['yes', 'no'], [True, False]):
+                    episode += 1
+                    break
             if fourth_expm and episode >= 2:
                 pick_up_loc = [(0, 2), (2, 0)]
                 _, _, world = ReadWorld().fill_world('testworld4thexpm.txt')
             else:
                 pick_up_loc = [(1, 3), (4, 2)]
                 _, _, world = ReadWorld().fill_world('testworld.txt')
+            # count episode
+            episode += 1
             updateDropAndPickSpots(h, w, q_table, False,
                                    drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
             updateDropAndPickSpots(h, w, q_table, True,
@@ -425,10 +445,6 @@ def doSteps(steps, policy, method):
                 print('Revert q_table')
             '''
             print('-------------------------------------------------')
-            # reset episode steps
-            count_steps = 0
-            # count episode
-            episode += 1
             # break
 
         # break if the next x or y is not valid (should never happen)

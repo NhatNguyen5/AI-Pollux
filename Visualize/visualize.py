@@ -100,3 +100,9 @@ class Visualize:
         g = color[1]
         b = color[2]
         return r, g, b
+
+    def snapshot(self, name):
+        f_name = self.name
+        with Image.open('%s.png' % f_name) as img:
+            snapshot = img.copy()
+            snapshot.save('%s.png' % name)

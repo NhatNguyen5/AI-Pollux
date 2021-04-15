@@ -2,7 +2,6 @@ from functions import *
 
 
 def initWorld(h, w, world, world_vl, x, y):
-
     for r in range(h):
         for c in range(w):
             if world[(c, r)]['action'] == 'd': world_vl.fill_block(world[(c, r)]['coor'], 'forestgreen')
@@ -15,9 +14,19 @@ def initWorld(h, w, world, world_vl, x, y):
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
     print('Done initializing visual')
 
-def updateWorld(h, w, world, world_vl):
+def updateWorld(h, w, world, world_vl, x, y):
     for r in range(h):
         for c in range(w):
+            ss = world[(c, r)]['step_scores']
+            world_vl.fill_block(world[(c, r)]['coor'], (3*ss + 128, 2*ss + 128, ss + 128))
+            if world[(c, r)]['action'] == 'd': world_vl.fill_block(world[(c, r)]['coor'], 'forestgreen')
+            if world[(c, r)]['action'] == 'p': world_vl.fill_block(world[(c, r)]['coor'], 'dodgerblue')
+            if(r == y and c == x):
+                world_vl.fill_block(world[(x, y)]['coor'], 'gold')
+                world_vl.write_block(world[(x, y)]['coor'], 'start', 'indigo')
+            else:
+                world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
+            world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
             if world[(c, r)]['action'] == 'd' or world[(c, r)]['action'] == 'p':
                 world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
     print('Done updating visual')
@@ -52,8 +61,10 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
     # actions = ['n', 's', 'e', 'w']
     actions = []
     q_offset = 0
+    ss = world[(prev_x, prev_y)]['step_scores']
     if is_fillQ:
-        world_vl.fill_block(world[(prev_x, prev_y)]['coor'], world_vl.get_color(prev_x, prev_y))
+        # world_vl.fill_block(world[(prev_x, prev_y)]['coor'], world_vl.get_color(prev_x, prev_y))
+        world_vl.fill_block(world[(prev_x, prev_y)]['coor'], (3*ss + 128, 2*ss + 128, ss + 128))
     else:
         world_vl.fill_block(world[(prev_x, prev_y)]['coor'], pathen(prev_x, prev_y, world_vl))
     if world[(prev_x, prev_y)]['action'] == 'd': world_vl.fill_block(world[(prev_x, prev_y)]['coor'], 'forestgreen')

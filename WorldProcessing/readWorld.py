@@ -26,7 +26,7 @@ class ReadWorld:
     def fill_world(self, file_name):
         general_world = self.read_world(file_name)
         world = dict()
-        elements = ['coor', 'north', 'south', 'west', 'east', 'action', 'no_of_blocks']
+        elements = ['coor', 'north', 'south', 'west', 'east', 'action', 'no_of_blocks', 'step_scores']
 
         num_cells_h = len(general_world)
         num_cells_w = len(general_world[0])
@@ -64,4 +64,6 @@ class ReadWorld:
                             world[(i, j)][e] = 8
                         else:
                             world[(i, j)][e] = 0
+                    if e == 'step_scores':
+                        world[(i, j)][e] = 0
         return num_cells_h, num_cells_w, world
