@@ -147,10 +147,6 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
                                      pos=a, font_s=10)
 
 
-def attractivePath():
-
-
-
 def pathen(x, y, world_vl):
     r, g, b = world_vl.get_color(x, y)
     return r + 3, g + 2, b
