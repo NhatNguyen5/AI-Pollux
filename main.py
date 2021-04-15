@@ -78,7 +78,7 @@ def plotPerformanceBank():
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
-    plt.savefig('performance_bank_plot.png')
+    plt.savefig('Images/performance_bank_plot.png')
 
 # ----------------------------------------------------------
 
@@ -110,7 +110,7 @@ def plotPerformanceDelSteps():
     plt.plot(delivery_plot_steps, delivery_tracker)
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
-    plt.savefig('performance_del_steps_plot.png')
+    plt.savefig('Images/performance_del_steps_plot.png')
 
 def output_to_exel(df_marks):
     writer = pd.ExcelWriter('output' + '.xlsx')
