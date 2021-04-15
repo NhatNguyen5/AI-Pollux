@@ -74,11 +74,13 @@ def plotPerformanceBank(name='performance_bank_plot'):
     for i, ba in enumerate(bank):
         plt.plot(bank_plot_steps[:max(max_len)],
                  np.pad(ba, (0, max(max_len) - len(ba)),
-                        'constant', constant_values=ba[len(ba) - 1]), label='e%d' % (i + 1))
+                        'constant', constant_values=ba[len(ba) - 1]), label='E%d' % (i + 1))
+    plt.title('Reward performance graph')
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
     plt.savefig('Images/%s.png' % name)
+    plt.clf()
 
 # ----------------------------------------------------------
 
@@ -91,23 +93,25 @@ delivery_tracker = np.zeros(FIRST_STEPS + SECOND_STEPS)
 
 def plotPerformanceDelSteps(name='performance_del_steps_plot'):
     plt.figure(2)
-    curr_nob = 0
-    last_pos = 0
+    curr_nob = -1
+    last_pos = -1
     track = -1
-    while delivery_tracker[track] != num_of_blocks_delivered: track -= 1
-    for i in range(FIRST_STEPS + SECOND_STEPS + track, FIRST_STEPS + SECOND_STEPS):
-        delivery_tracker[i] = num_of_blocks_delivered
-    for i, n in enumerate(delivery_tracker):
-        if curr_nob == 16:
+    snapshot_delivery_tracker = delivery_tracker[:delivery_steps]
+    snapshot_delivery_plot_steps = delivery_plot_steps[:delivery_steps]
+    while snapshot_delivery_tracker[track] != num_of_blocks_delivered: track -= 1
+    for j in range(delivery_steps + track, delivery_steps):
+        snapshot_delivery_tracker[j] = num_of_blocks_delivered
+    for i, n in enumerate(snapshot_delivery_tracker):
+        if curr_nob == 15:
             curr_nob = -1
         if n == curr_nob + 1:
             curr_nob += 1
             incre = 1/(i - last_pos)
             for j in range(last_pos + 1, i):
-                delivery_tracker[j] = delivery_tracker[j-1] + incre
+                snapshot_delivery_tracker[j] = snapshot_delivery_tracker[j-1] + incre
             last_pos = i
-
-    plt.plot(delivery_plot_steps, delivery_tracker)
+    plt.plot(snapshot_delivery_plot_steps, snapshot_delivery_tracker)
+    plt.title('Blocks delivered performance graph')
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
     plt.savefig('Images/%s.png' % name)
@@ -251,9 +255,8 @@ def main():
     if plot:
         plotPerformanceBank()
         plotPerformanceDelSteps()
-        plt.show()
 
-def applyAction(action):
+def applyAction(action, state):
     global drop_off_loc
     global pick_up_loc
     global has_block
@@ -374,7 +377,7 @@ def doSteps(steps, policy, method):
         bank_account.append(bank_account[len(bank_account)-1]+reward)
 
         # has_block gets updated here
-        applyAction(action)
+        applyAction(action, state)
         # Register a step between delivery
         delivery_steps += 1
         next_x, next_y = getNextCoords(action, world, x, y)
@@ -389,6 +392,15 @@ def doSteps(steps, policy, method):
         elif method == "SARSA":
             q_table[state][actionToIndex(action)] = sarsa(state, action, reward, next_state, next_actions, policy)
 
+        # RESET Q_VALUES FOR DELI AND PICK SPOT WHEN FULL AND EMPTY
+        '''
+        if action == 'd':
+            if world[(x, y)]['no_of_blocks'] == 4:
+                q_table[state][5] = 0
+        elif action == 'p':
+            if world[(x, y)]['no_of_blocks'] == 0:
+                q_table[state][4] = 0
+        '''
         # keep track of prev state for step visualize part
         prev_x = x
         prev_y = y
@@ -491,6 +503,7 @@ def doSteps(steps, policy, method):
             print('\n' * 5)
             # print(q_table)
             print(valid_actions)
+            print(q_table[state])
             print('action: {:5s}'.format(action), '| reward:', reward)
             print('ntw:', ntw, '| wtn:', wtn)
             if has_block:
@@ -513,7 +526,7 @@ def doSteps(steps, policy, method):
 
             img = cv.imread('Images/agent_monitor.png')
             cv.imshow('agent monitor', img)
-            cv.waitKey(1)
+            cv.waitKey(0)
 
     # output for the last episode
     if step + 1 == SECOND_STEPS:
