@@ -351,8 +351,6 @@ def doSteps(steps, policy, method):
     wtn = True  # from with block to no block
 
     for step in range(0, steps):
-        # Register a step between delivery
-        delivery_steps += 1
         # Preferable path steps_count
         world[(x, y)]['step_scores'] += 1
         # this "state" is used for q_table
@@ -377,7 +375,8 @@ def doSteps(steps, policy, method):
 
         # has_block gets updated here
         applyAction(action)
-
+        # Register a step between delivery
+        delivery_steps += 1
         next_x, next_y = getNextCoords(action, world, x, y)
         if (coordsNotValid(next_x, next_y, w, h)): break
         next_actions = getValidActions(world, next_x, next_y, has_block)
@@ -427,6 +426,9 @@ def doSteps(steps, policy, method):
             if watch:
                 if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     vis_objs['agent_monitor'].snapshot(input("Save as: "))
+                if not getAcceptedInput("Continue?\n(yes/no): ", ['yes', 'no'], [True, False]):
+                    episode += 1
+                    break
             if pit_stop:
                 if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
@@ -446,6 +448,8 @@ def doSteps(steps, policy, method):
                 if not getAcceptedInput("Continue?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     episode += 1
                     break
+                watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
+
             if fourth_expm and episode >= 2:
                 pick_up_loc = [(0, 2), (2, 0)]
                 _, _, world = ReadWorld().fill_world('testworld4thexpm.txt')
@@ -482,6 +486,7 @@ def doSteps(steps, policy, method):
         # count episode steps
         count_steps += 1
 
+        # AGENT MONITOR
         if steps != 500 and watch:
             print('\n' * 5)
             # print(q_table)
@@ -506,10 +511,11 @@ def doSteps(steps, policy, method):
                            has_block, prev_x, prev_y, start_x, start_y)
                 putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'a')
 
-            img = cv.imread('agent_monitor.png')
+            img = cv.imread('Images/agent_monitor.png')
             cv.imshow('agent monitor', img)
             cv.waitKey(1)
 
+    # output for the last episode
     if step + 1 == SECOND_STEPS:
         print('episode ', episode, 'is not done | agent takes:', count_steps)
         episode_list.append(episode)
