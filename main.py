@@ -520,7 +520,12 @@ def doSteps(steps, policy, method):
         print('episode ', episode, 'is not done | agent takes:', count_steps)
         episode_list.append(episode)
         steps_count_list.append(count_steps)
-        terminal_reached.append('False')        
+        terminal_reached.append('False')  
+        df_marks = pd.DataFrame({'episodes': episode_list,
+                             'steps counted': steps_count_list,
+                             'Terminal state reached': terminal_reached,
+                             })
+        output_to_exel(df_marks)
        
         print('6000 steps reached')
     return step + 1
