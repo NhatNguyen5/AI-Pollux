@@ -142,7 +142,7 @@ def getAcceptedInput(question, accepted_inputs, return_values):
 
 def main():
     # take user input
-    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc
+    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc, alpha, gamma, epsilon
     default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot, no asking for continue)?"
                                "\n(yes/no): ", ['yes', 'no'], [True, False])
     policy = ''
@@ -159,6 +159,20 @@ def main():
         if not fourth_expm:
             policy = getAcceptedInput("Which policy?\n(PRANDOM/PEXPLOIT/PGREEDY): ",
                                       ["PRANDOM", "PEXPLOIT", "PGREEDY"], ["PRANDOM", "PEXPLOIT", "PGREEDY"])
+            if not getAcceptedInput("Use default parameters (alpha = 0.3, gamma = 0.5, epsilon = 0.8)?"
+                                    "\n(yes/no): ", ['yes', 'no'], [True, False]):
+                alpha = float(input('alpha = '))
+                while alpha >= 1 or alpha <= 0:
+                    print('alpha in range (0,1)!')
+                    alpha = float(input('alpha = '))
+                gamma = float(input('gamma = '))
+                while gamma >= 1 or gamma <= 0:
+                    print('gamma in range (0,1)!')
+                    gamma = float(input('gamma = '))
+                epsilon = float(input('epsilon = '))
+                while epsilon >= 1 or epsilon <= 0:
+                    print('epsilon in range (0,1)!')
+                    epsilon = float(input('epsilon = '))
         watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
         pit_stop = getAcceptedInput("Ask for continue after each terminate?\n(yes/no): ", ['yes', 'no'], [True, False])
         plot = getAcceptedInput("Plot performance graph?\n(yes/no): ", ['yes', 'no'], [True, False])
