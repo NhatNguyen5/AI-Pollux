@@ -66,7 +66,7 @@ def regBankAccount():
     bank_account = [0]
     print('Put episode', episode, 'account in the bank')
 
-def plotPerformanceBank():
+def plotPerformanceBank(name='performance_bank_plot'):
     plt.figure(1)
     max_len = []
     for ba in bank:
@@ -78,7 +78,7 @@ def plotPerformanceBank():
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
-    plt.savefig('Images/performance_bank_plot.png')
+    plt.savefig('Images/%s.png' % name)
 
 # ----------------------------------------------------------
 
@@ -89,7 +89,7 @@ prev_del_step = 0
 num_of_blocks_delivered = 0
 delivery_tracker = np.zeros(FIRST_STEPS + SECOND_STEPS)
 
-def plotPerformanceDelSteps():
+def plotPerformanceDelSteps(name='performance_del_steps_plot'):
     plt.figure(2)
     curr_nob = 0
     last_pos = 0
@@ -110,7 +110,7 @@ def plotPerformanceDelSteps():
     plt.plot(delivery_plot_steps, delivery_tracker)
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
-    plt.savefig('Images/performance_del_steps_plot.png')
+    plt.savefig('Images/%s.png' % name)
 
 def output_to_exel(df_marks):
     writer = pd.ExcelWriter('output' + '.xlsx')
@@ -414,6 +414,21 @@ def doSteps(steps, policy, method):
                 if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     vis_objs['agent_monitor'].snapshot(input("Save as: "))
             if pit_stop:
+                if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
+                    updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
+                    fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y)
+                    fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y)
+                    if has_block:
+                        putAgent(h, w, q_table, world, vis_objs['q_table_with_block'],
+                                 has_block, x, y, start_x, start_y, 'ab')
+                    else:
+                        putAgent(h, w, q_table, world, vis_objs['q_table_no_block'],
+                                 has_block, x, y, start_x, start_y, 'a')
+                    vis_objs['q_table_with_block'].snapshot('E%d_q_table_with_block' % episode)
+                    vis_objs['q_table_no_block'].snapshot('E%d_q_table_no_block' % episode)
+                    vis_objs['world_vl'].snapshot('E%d_world' % episode)
+                    plotPerformanceBank('E%d_performance_bank_plot' % episode)
+                    plotPerformanceDelSteps('E%d_performance_del_steps_plot' % episode)
                 if not getAcceptedInput("Continue?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     episode += 1
                     break
