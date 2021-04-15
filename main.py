@@ -62,7 +62,6 @@ def regBankAccount():
 
 def plotPerformanceBank():
     plt.figure(1)
-    print(len(bank), 'episodes')
     max_len = []
     for ba in bank:
         max_len.append(len(ba))
@@ -88,6 +87,10 @@ def plotPerformanceDelSteps():
     plt.figure(2)
     curr_nob = 0
     last_pos = 0
+    track = -1
+    while delivery_tracker[track] != num_of_blocks_delivered: track -= 1
+    for i in range(FIRST_STEPS + SECOND_STEPS + track, FIRST_STEPS + SECOND_STEPS):
+        delivery_tracker[i] = num_of_blocks_delivered
     for i, n in enumerate(delivery_tracker):
         if curr_nob == 16:
             curr_nob = -1
@@ -98,8 +101,6 @@ def plotPerformanceDelSteps():
                 delivery_tracker[j] = delivery_tracker[j-1] + incre
             last_pos = i
 
-    for a in delivery_tracker:
-        print(a)
     plt.plot(delivery_plot_steps, delivery_tracker)
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
