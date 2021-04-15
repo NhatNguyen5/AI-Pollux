@@ -7,12 +7,18 @@ from Visualize.visualize import Visualize as vl
 from WorldProcessing.readWorld import ReadWorld
 import cv2 as cv
 import matplotlib.pyplot as plt
-
+import pandas as pd
+import openpyxl
+from openpyxl.workbook import Workbook
 
 FIRST_STEPS = 500
 SECOND_STEPS = 5500
 count_steps = 0
 episode = 1
+
+episode_list=[]
+steps_count_list=[]
+terminal_reached=[]
 
 random.seed(random.uniform(1, 1000))
 
@@ -104,7 +110,14 @@ def plotPerformanceDelSteps():
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
     plt.savefig('performance_del_steps_plot.png')
-
+    
+def output_to_exel(df_marks):
+    writer = pd.ExcelWriter('output' + '.xlsx')
+    # write dataframe to excel
+    df_marks.to_excel(writer)
+    # save the excel
+    writer.save()
+    print('DataFrame is written successfully to Excel File.')
 # ----------------------------------------------------------
 
 # 4th experiment enabler
@@ -376,6 +389,9 @@ def doSteps(steps, policy, method):
             print(q_table)
             print('episode', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
             print("\nTerminal state reached")
+            episode_list.append(episode)
+            steps_count_list.append(count_steps)
+            terminal_reached.append('True')
             done = True
             x = 0
             y = 4
@@ -450,6 +466,10 @@ def doSteps(steps, policy, method):
 
     if step + 1 == SECOND_STEPS:
         print('episode ', episode, 'is not done | agent takes:', count_steps)
+        episode_list.append(episode)
+        steps_count_list.append(count_steps)
+        terminal_reached.append('False')        
+       
         print('6000 steps reached')
     return step + 1
 
