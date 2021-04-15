@@ -11,15 +11,17 @@ import pandas as pd
 import openpyxl
 from openpyxl.workbook import Workbook
 
+alpha = 0.3  # learning rate
+gamma = 0.5  # discount rate
+epsilon = 0.8  # chance of being greedy in exploit policy
+
 FIRST_STEPS = 500
 SECOND_STEPS = 5500
 count_steps = 0
 episode = 1
-
 episode_list=[]
 steps_count_list=[]
 terminal_reached=[]
-
 random.seed(random.uniform(1, 1000))
 
 # global x,  y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
@@ -33,7 +35,6 @@ pick_up_loc = [(1, 3), (4, 2)]
 has_block = False
 done = False
 h, w, world = ReadWorld().fill_world('testworld.txt')
-
 vis_objs = dict()
 
 # states, given x and y, returns state index for q_table
@@ -44,27 +45,33 @@ states = getStates(w, h)
 q_offset = w * h
 q_table = np.zeros((q_offset * 2, 6))
 
-# smartanizer # EXPERIMENTAL FEATURE
-'''
-best_q_table = q_table  # EXPERIMENTAL FEATURE
-best_steps = SECOND_STEPS  # EXPERIMENTAL FEATURE
-best_episode = 0  # EXPERIMENTAL FEATURE
-'''
-
-alpha = 0.3  # learning rate
-gamma = 0.5  # discount rate
-epsilon = 0.8  # chance of being greedy in exploit policy
-
 # BANK ACCOUNT (USE FOR MEASURING PERFORMANCE)
 bank_plot_steps = np.arange(SECOND_STEPS)  # step array use for plotting
 bank = []
 bank_account = [0]
-# put bank account in the bank
+
+# DELIVERY STEPS (MEASURE PERFORMANCE)
+delivery_plot_steps = np.arange(FIRST_STEPS + SECOND_STEPS)
+delivery_steps = 0
+prev_del_step = 0
+num_of_blocks_delivered = 0
+delivery_tracker = np.zeros(FIRST_STEPS + SECOND_STEPS)
+
+# 4th experiment enabler
+fourth_expm = False
+
+# visualize each step
+watch = False
+
+# Ask for continue after each episode
+pit_stop = False
+
+
 def regBankAccount():
     global bank_account
     bank.append(bank_account)
     bank_account = [0]
-    print('Put episode', episode, 'account in the bank')
+
 
 def plotPerformanceBank(name='performance_bank_plot'):
     plt.figure(1)
@@ -82,14 +89,6 @@ def plotPerformanceBank(name='performance_bank_plot'):
     plt.savefig('Images/%s.png' % name)
     plt.clf()
 
-# ----------------------------------------------------------
-
-# DELIVERY STEPS (MEASURE PERFORMANCE)
-delivery_plot_steps = np.arange(FIRST_STEPS + SECOND_STEPS)
-delivery_steps = 0
-prev_del_step = 0
-num_of_blocks_delivered = 0
-delivery_tracker = np.zeros(FIRST_STEPS + SECOND_STEPS)
 
 def plotPerformanceDelSteps(name='performance_del_steps_plot'):
     plt.figure(2)
@@ -116,6 +115,7 @@ def plotPerformanceDelSteps(name='performance_del_steps_plot'):
     plt.ylabel('Block delivered')
     plt.savefig('Images/%s.png' % name)
 
+
 def output_to_exel(df_marks):
     writer = pd.ExcelWriter('output' + '.xlsx')
     # write dataframe to excel
@@ -123,18 +123,8 @@ def output_to_exel(df_marks):
     # save the excel
     writer.save()
     print('DataFrame is written successfully to Excel File.')
-# ----------------------------------------------------------
 
-# 4th experiment enabler
-fourth_expm = False
 
-# visualize each step
-watch = False
-
-# Ask for continue after each episode
-pit_stop = False
-
-# GET USER INPUT
 def getAcceptedInput(question, accepted_inputs, return_values):
     user_input = input(question)
     while not (user_input in accepted_inputs):
@@ -144,9 +134,16 @@ def getAcceptedInput(question, accepted_inputs, return_values):
         return return_values[accepted_inputs.index(user_input)]
 
 
+def getFloat(name):
+    while True:
+        val = float(input("\nEnter value for " + name + ": "))
+        if val < 1 and val > 0:
+            break
+        print('\nInvalid input! \n', name, 'must be between 0 and 1')
+    return val
+
 def main():
-    # take user input
-    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc, alpha, gamma, epsilon
+    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc, alpha, gamma, epsilon, episode, world
     default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot, no asking for continue)?"
                                "\n(yes/no): ", ['yes', 'no'], [True, False])
     policy = ''
@@ -165,27 +162,14 @@ def main():
                                       ["PRANDOM", "PEXPLOIT", "PGREEDY"], ["PRANDOM", "PEXPLOIT", "PGREEDY"])
             if not getAcceptedInput("Use default parameters (alpha = 0.3, gamma = 0.5, epsilon = 0.8)?"
                                     "\n(yes/no): ", ['yes', 'no'], [True, False]):
-                alpha = float(input('alpha = '))
-                while alpha >= 1 or alpha <= 0:
-                    print('alpha in range (0,1)!')
-                    alpha = float(input('alpha = '))
-                gamma = float(input('gamma = '))
-                while gamma >= 1 or gamma <= 0:
-                    print('gamma in range (0,1)!')
-                    gamma = float(input('gamma = '))
-                epsilon = float(input('epsilon = '))
-                while epsilon >= 1 or epsilon <= 0:
-                    print('epsilon in range (0,1)!')
-                    epsilon = float(input('epsilon = '))
+                alpha = getFloat('alpha')
+                gamma = getFloat('gamma')
+                epsilon = getFloat('epsilon')
+                
         watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
         pit_stop = getAcceptedInput("Ask for continue after each terminate?\n(yes/no): ", ['yes', 'no'], [True, False])
         plot = getAcceptedInput("Plot performance graph?\n(yes/no): ", ['yes', 'no'], [True, False])
 
-    global world
-    global episode
-    # policy = "PRANDOM"
-    # policy = "PEXPLOIT"
-    # policy = "PGREEDY"
 
     # visualizing world in starting state
     vis_objs['world_vl'] = vl('world')
@@ -213,8 +197,6 @@ def main():
     # always use PRANDOM for first 500 steps
     steps1 = doSteps(FIRST_STEPS, 'PRANDOM', method)
 
-    # print("q_table after 500 steps")
-    # print(q_table)
     if fourth_expm:
         _, _, world = ReadWorld().fill_world('testworld.txt')
         drop_off_loc = [(0, 0), (4, 0), (2, 2), (4, 4)]
@@ -225,13 +207,9 @@ def main():
     if (done == False):
         steps2 = doSteps(SECOND_STEPS, policy, method)
 
-    print("\n\nq_table after completed")
-    print(q_table)
-
     if not done:
         episode -= 1
     print("\ncompleted", episode, 'episodes in', steps1 + steps2, "steps")
-    # print('Best episode:', best_episode, 'with', best_steps, 'steps') # EXPERIMENTAL FEATURE
 
     # update world
     if fourth_expm:
@@ -267,22 +245,16 @@ def applyAction(action, state):
         # DELIVER BLOCK STEPS PERFORMANCE MEASURE
         num_of_blocks_delivered += 1
         delivery_tracker[delivery_steps] = num_of_blocks_delivered
-
-        # ----------------------------
-
         if world[(x, y)]['no_of_blocks'] == 4:
             drop_off_loc.remove((x, y))
             # RECORD FIRST TIME A DROP OFF IS FULL
             if episode == 1 and len(drop_off_loc) == 3:
                 fillQValues(h, w, q_table, world, vis_objs['first_drop_off_full'], False, start_x, start_y)
-            # -------------------------
-            print((x, y), 'is full')
         has_block = False
     elif action == 'p':
         world[(x, y)]['no_of_blocks'] -= 1
         if world[(x, y)]['no_of_blocks'] == 0:
             pick_up_loc.remove((x, y))
-            print((x, y), 'is empty')
         has_block = True
 
 
@@ -338,7 +310,6 @@ def sarsa(state, action, reward, next_state, next_actions, policy):
         next_action, _ = exploitAction(state, next_actions, epsilon)
     elif (policy == 'PGREEDY'):
         next_action, _ = greedyAction(state, next_actions)
-
     return Q(state, action) + alpha*(reward + gamma * (Q(next_state, next_action) - Q(state, action)))
 
 
@@ -346,40 +317,31 @@ def doSteps(steps, policy, method):
     global x, y, drop_off_loc, pick_up_loc, has_block, \
         done, world, q_offset, q_table, count_steps, episode, watch
     global num_of_blocks_delivered, delivery_steps, bank_account
-    '''
-    global best_q_table, best_steps, best_episode  # EXPERIMENTAL FEATURE
-    '''
     step = 0
     ntw = True  # from no block to with block
     wtn = True  # from with block to no block
 
     for step in range(0, steps):
-        # Preferable path steps_count
-        world[(x, y)]['step_scores'] += 1
-        # this "state" is used for q_table
         state = states[y][x]
         if (has_block): state += q_offset
-
-        # list of all possible operations at current state
-        valid_actions = getValidActions(world, x, y, has_block)
-
+        world[(x, y)]['step_scores'] += 1
         action = ''
         reward = -1
 
+        valid_actions = getValidActions(world, x, y, has_block)
         if (policy == 'PRANDOM'):
             action, reward = chooseRandomAction(valid_actions)
         elif (policy == 'PEXPLOIT'):
             action, reward = exploitAction(state, valid_actions, epsilon)
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
-
-        # BANK THE REWARD
         bank_account.append(bank_account[len(bank_account)-1]+reward)
 
         # has_block gets updated here
         applyAction(action, state)
         # Register a step between delivery
         delivery_steps += 1
+
         next_x, next_y = getNextCoords(action, world, x, y)
         if (coordsNotValid(next_x, next_y, w, h)): break
         next_actions = getValidActions(world, next_x, next_y, has_block)
@@ -421,12 +383,12 @@ def doSteps(steps, policy, method):
                 fillQValues(h, w, q_table, world, vis_objs['first_terminate'], False, start_x, start_y)
             # ------------------------------
 
-            print(q_table)
-            print('episode', episode, 'is done | agent takes:', count_steps, 'steps')  # ,'| best steps: ', best_steps)
-            print("\nTerminal state reached")
+            print("Terminal state reached")
+            print('episode', episode, 'is done | agent took', count_steps, 'steps')  # ,'| best steps: ', best_steps)
             episode_list.append(episode)
             steps_count_list.append(count_steps)
             terminal_reached.append('True')
+
             # reset episode steps
             count_steps = 0
             done = True
@@ -470,26 +432,12 @@ def doSteps(steps, policy, method):
                 _, _, world = ReadWorld().fill_world('testworld.txt')
             # count episode
             episode += 1
-            updateDropAndPickSpots(h, w, q_table, False,
-                                   drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
-            updateDropAndPickSpots(h, w, q_table, True,
-                                   drop_off_loc, pick_up_loc, vis_objs['q_table_with_block'], world)
+            updateDropAndPickSpots(h, w, q_table, False, drop_off_loc, pick_up_loc, vis_objs['q_table_no_block'], world)
+            updateDropAndPickSpots(h, w, q_table, True, drop_off_loc, pick_up_loc, vis_objs['q_table_with_block'], world)
             # reset preferable path
             vis_objs['agent_monitor'].visualize_gen(h, w)
-            # print('q_table:')
-            # print(q_table)
             
-            # EXPERIMENTAL FEATURE
-            '''
-            if count_steps < best_steps :
-                best_steps = count_steps
-                best_q_table = q_table
-                best_episode = episode
-            elif count_steps >= best_steps and policy == 'PGREEDY':
-                q_table = best_q_table
-                print('Revert q_table')
-            '''
-            print('-------------------------------------------------')
+            print('\n-------------------------------------------------\n')
             # break
 
         # break if the next x or y is not valid (should never happen)
@@ -499,9 +447,8 @@ def doSteps(steps, policy, method):
         count_steps += 1
 
         # AGENT MONITOR
-        if steps != 500 and watch:
+        if watch and steps != 500:
             print('\n' * 5)
-            # print(q_table)
             print(valid_actions)
             print(q_table[state])
             print('action: {:5s}'.format(action), '| reward:', reward)
@@ -514,7 +461,6 @@ def doSteps(steps, policy, method):
                 updateCell(h, w, q_table, world, vis_objs['agent_monitor'],
                            has_block, prev_x, prev_y, start_x, start_y)
                 putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'ab')
-
             else:
                 ntw = True
                 if wtn:
@@ -530,7 +476,7 @@ def doSteps(steps, policy, method):
 
     # output for the last episode
     if step + 1 == SECOND_STEPS:
-        print('episode ', episode, 'is not done | agent takes:', count_steps)
+        print('episode ', episode, 'is not done | agent took:', count_steps, 'steps')
         episode_list.append(episode)
         steps_count_list.append(count_steps)
         terminal_reached.append('False')  
@@ -539,8 +485,7 @@ def doSteps(steps, policy, method):
                              'Terminal state reached': terminal_reached,
                              })
         output_to_exel(df_marks)
-       
-        print('6000 steps reached')
+
     return step + 1
 
 

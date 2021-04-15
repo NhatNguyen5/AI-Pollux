@@ -12,7 +12,6 @@ def initWorld(h, w, world, world_vl, x, y):
             else:
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
-    print('Done initializing visual')
 
 def updateWorld(h, w, world, world_vl, x, y):
     for r in range(h):
@@ -29,7 +28,6 @@ def updateWorld(h, w, world, world_vl, x, y):
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
             if world[(c, r)]['action'] == 'd' or world[(c, r)]['action'] == 'p':
                 world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
-    print('Done updating visual')
 
 def initQTableWorld(h, w, world, world_vl, x, y):
     for r in range(h):
@@ -45,13 +43,11 @@ def initQTableWorld(h, w, world, world_vl, x, y):
                 world_vl.put_x((c, r), 'purple')
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 9, offset_u=8)
-    print('Done initializing q_table')
 
 def fillQValues(h, w, q_table, world, world_vl, has_block, start_x, start_y):
     for r in range(w):
         for c in range(h):
             updateCell(h, w, q_table, world, world_vl, has_block, r, c, start_x, start_y, True)
-    print('Done filling q_table')
 
 def putAgent(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y, agent_name='a'):
     updateCell(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y)
