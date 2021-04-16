@@ -45,7 +45,25 @@ states = getStates(w, h)
 q_offset = w * h
 q_table = np.zeros((q_offset * 2, 6))
 
+'''
+for r in range(len(q_table)):
+    for c in range(len(q_table[r])):
+        if c <= 3:
+            q_table[r][c] = -1
+        else:
+            if c == 5:
+                for d in drop_off_loc:
+                    getStateFromCoords(d[1], d[0])
+                    q_table[getStateFromCoords(d[1], d[0]) + q_offset][c] = 13
+            else:
+                for p in pick_up_loc:
+                    getStateFromCoords(p[1], p[0])
+                    q_table[getStateFromCoords(p[1], p[0])][c] = 13
+    print(q_table[r])
+'''
 # BANK ACCOUNT (USE FOR MEASURING PERFORMANCE)
+entire_bank_plot_steps = np.arange(FIRST_STEPS + SECOND_STEPS + 1)
+entire_bank_accumulative = [0]
 bank_plot_steps = np.arange(SECOND_STEPS)  # step array use for plotting
 bank = []
 bank_account = [0]
@@ -82,12 +100,20 @@ def plotPerformanceBank(name='performance_bank_plot'):
         plt.plot(bank_plot_steps[:max(max_len)],
                  np.pad(ba, (0, max(max_len) - len(ba)),
                         'constant', constant_values=ba[len(ba) - 1]), label='E%d' % (i + 1))
-    plt.title('Reward performance graph')
+    plt.title('Reward performance graph each episode')
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
     plt.savefig('Images/%s.png' % name)
     plt.clf()
+    plt.figure(3)
+
+    plt.plot(entire_bank_plot_steps[:len(entire_bank_accumulative)],
+             entire_bank_accumulative)
+    plt.title('Reward performance graph entire run')
+    plt.xlabel('Steps')
+    plt.ylabel('Accumulated reward')
+    plt.savefig('Images/Entire_run.png')
 
 
 def plotPerformanceDelSteps(name='performance_del_steps_plot'):
@@ -299,7 +325,7 @@ def greedyAction(state, valid_actions):
 
 
 def qLearning(state, action, reward, next_state, next_actions):
-    return Q(state, action) + alpha * (reward + gamma * (maxQ(next_state, next_actions) - Q(state, action)))
+    return ((1-alpha)*Q(state, action) + alpha * (reward + gamma * (maxQ(next_state, next_actions))))
 
 
 def sarsa(state, action, reward, next_state, next_actions, policy):
@@ -310,7 +336,7 @@ def sarsa(state, action, reward, next_state, next_actions, policy):
         next_action, _ = exploitAction(state, next_actions, epsilon)
     elif (policy == 'PGREEDY'):
         next_action, _ = greedyAction(state, next_actions)
-    return Q(state, action) + alpha*(reward + gamma * (Q(next_state, next_action) - Q(state, action)))
+    return ((1-alpha)*Q(state, action) + alpha*(reward + gamma * (Q(next_state, next_action))))
 
 
 def doSteps(steps, policy, method):
@@ -336,6 +362,7 @@ def doSteps(steps, policy, method):
         elif (policy == 'PGREEDY'):
             action, reward = greedyAction(state, valid_actions)
         bank_account.append(bank_account[len(bank_account)-1]+reward)
+        entire_bank_accumulative.append(entire_bank_accumulative[len(entire_bank_accumulative)-1]+reward)
 
         # has_block gets updated here
         applyAction(action, state)
@@ -358,10 +385,10 @@ def doSteps(steps, policy, method):
         '''
         if action == 'd':
             if world[(x, y)]['no_of_blocks'] == 4:
-                q_table[state][5] = 0
+                q_table[state][5] = -9
         elif action == 'p':
             if world[(x, y)]['no_of_blocks'] == 0:
-                q_table[state][4] = 0
+                q_table[state][4] = -9
         '''
         # keep track of prev state for step visualize part
         prev_x = x
@@ -374,6 +401,7 @@ def doSteps(steps, policy, method):
         # if terminal state reached
         # reset world, put agent back at start
         if len(pick_up_loc) == 0 and len(drop_off_loc) == 0:  # or (policy == 'PGREEDY' and steps == best_steps):
+            print('%d' % round(((delivery_steps/(FIRST_STEPS + SECOND_STEPS))*100), 4), '%')
             # RESET num_of_blocks_delivered
             num_of_blocks_delivered = 0
             # Put episode bank account in the bank
@@ -472,7 +500,7 @@ def doSteps(steps, policy, method):
 
             img = cv.imread('Images/agent_monitor.png')
             cv.imshow('agent monitor', img)
-            cv.waitKey(0)
+            cv.waitKey(1)
 
     # output for the last episode
     if step + 1 == SECOND_STEPS:

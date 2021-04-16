@@ -38,7 +38,7 @@ def actionToIndex(action):
     elif action == 'west': n = 3
     elif action == 'p': n = 4
     elif action == 'd': n = 5
-    else: return print("actionNumber recieved invalid action: '" + str(action) + "'")
+    else: return print("actionNumber received invalid action: '" + str(action) + "'")
     return n
 
 def coordsNotValid(x, y, w, h):
