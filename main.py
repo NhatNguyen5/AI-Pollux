@@ -110,7 +110,7 @@ def plotPerformanceBank(name='performance_bank_plot'):
         plt.plot(bank_plot_steps[:max(max_len)],
                  np.pad(ba, (0, max(max_len) - len(ba)),
                         'constant', constant_values=ba[len(ba) - 1]), label='E%d' % (i + 1))
-    plt.title('Reward performance graph each episode\n' + getTitleString())
+    plt.title('Reward performance graph each episode(%d)\n' % episode + getTitleString())
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
@@ -146,7 +146,7 @@ def plotPerformanceDelSteps(name='performance_del_steps_plot'):
                 snapshot_delivery_tracker[j] = snapshot_delivery_tracker[j-1] + incre
             last_pos = i
     plt.plot(snapshot_delivery_plot_steps, snapshot_delivery_tracker)
-    plt.title('Blocks delivered performance graph\n' + getTitleString())
+    plt.title('Blocks delivered performance graph(%d)\n' % episode + getTitleString())
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
     plt.savefig('Images/%s.png' % name)
@@ -471,7 +471,7 @@ def doSteps(steps, policy, method):
                     episode += 1
                     break
                 watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
-            if fourth_expm and episode == 2:
+            if fourth_expm and episode in [2, 3]:
                 updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
                 fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y, is_fillQ=True)
                 fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y, is_fillQ=True)
