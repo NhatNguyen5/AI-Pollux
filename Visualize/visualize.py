@@ -15,7 +15,7 @@ class Visualize:
         img_h = num_cell_h * (block_size + gap) + gap
         img_w = num_cell_w * (block_size + gap) + gap
 
-        img = Image.new('RGB', (img_w, img_h), color='gray')
+        img = Image.new('RGB', (img_w, img_h), color='dimgray')
         draw = ImageDraw.Draw(img)
 
         # row divider
@@ -106,3 +106,53 @@ class Visualize:
         with Image.open('Images/%s.png' % f_name) as img:
             snapshot = img.copy()
             snapshot.save('Images/%s.png' % name)
+
+    def put_arrow(self,  direction, coor=(0, 0), color='white'):
+        f_name = self.name
+        x = coor[0]
+        y = coor[1]
+        start_pixel_x = gap + x * (block_size + gap)
+        start_pixel_y = gap + y * (block_size + gap)
+        with Image.open('Images/%s.png' % f_name) as img:
+            draw = ImageDraw.Draw(img)
+            if direction in ['n', 'north']:
+                # center line
+                draw.line([(start_pixel_x + block_size/2, start_pixel_y + 3*block_size/8),
+                           (start_pixel_x + block_size/2, start_pixel_y + 5*block_size/8)], fill=color, width=2)
+                # first head line
+                draw.line([(start_pixel_x + block_size/2, start_pixel_y + 3*block_size/8),
+                           (start_pixel_x + 3 * block_size/8, start_pixel_y + block_size/2)], fill=color, width=2)
+                # second head line
+                draw.line([(start_pixel_x + block_size / 2, start_pixel_y + 3 * block_size / 8),
+                           (start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2)], fill=color, width=2)
+            elif direction in ['s', 'south']:
+                # center line
+                draw.line([(start_pixel_x + block_size / 2, start_pixel_y + 3 * block_size / 8),
+                           (start_pixel_x + block_size / 2, start_pixel_y + 5 * block_size / 8)], fill=color, width=2)
+                # first head line
+                draw.line([(start_pixel_x + block_size / 2, start_pixel_y + 5 * block_size / 8),
+                           (start_pixel_x + 3 * block_size / 8, start_pixel_y + block_size / 2)], fill=color, width=2)
+                # second head line
+                draw.line([(start_pixel_x + block_size / 2, start_pixel_y + 5 * block_size / 8),
+                           (start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2)], fill=color, width=2)
+            elif direction in ['e', 'east']:
+                # center line
+                draw.line([(start_pixel_x + 3 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2)], fill=color, width=2)
+                # first head line
+                draw.line([(start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + block_size / 2, start_pixel_y + 3 * block_size / 8)], fill=color, width=2)
+                # second head line
+                draw.line([(start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + block_size / 2, start_pixel_y + 5 * block_size / 8)], fill=color, width=2)
+            elif direction in ['w', 'west']:
+                # center line
+                draw.line([(start_pixel_x + 3 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + 5 * block_size / 8, start_pixel_y + block_size / 2)], fill=color, width=2)
+                # first head line
+                draw.line([(start_pixel_x + 3 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + block_size / 2, start_pixel_y + 3 * block_size / 8)], fill=color, width=2)
+                # second head line
+                draw.line([(start_pixel_x + 3 * block_size / 8, start_pixel_y + block_size / 2),
+                           (start_pixel_x + block_size / 2, start_pixel_y + 5 * block_size / 8)], fill=color, width=2)
+        img.save('Images/%s.png' % f_name)

@@ -15,8 +15,11 @@ alpha = 0.3  # learning rate
 gamma = 0.5  # discount rate
 epsilon = 0.8  # chance of being greedy in exploit policy
 
+method = ''
+policy = ''
+
 FIRST_STEPS = 500
-SECOND_STEPS = 5500
+SECOND_STEPS = 6500
 count_steps = 0
 episode = 1
 episode_list=[]
@@ -24,8 +27,15 @@ steps_count_list=[]
 terminal_reached=[]
 random.seed(random.uniform(1, 1000))
 
+def getTitleString():
+    return str('(%s, %s,' % (method, policy) +
+               " alpha={:.3f}".format(alpha) +
+               ", gamma={:.3f}".format(gamma) +
+               ", epsilon={:.3f})".format(epsilon))
+
 # global x,  y, drop_off_loc, pick_up_loc, has_block, done, world, q_offset, q_table
 # build world in starting state
+
 start_x = 0
 start_y = 4
 x = 0
@@ -100,7 +110,7 @@ def plotPerformanceBank(name='performance_bank_plot'):
         plt.plot(bank_plot_steps[:max(max_len)],
                  np.pad(ba, (0, max(max_len) - len(ba)),
                         'constant', constant_values=ba[len(ba) - 1]), label='E%d' % (i + 1))
-    plt.title('Reward performance graph each episode')
+    plt.title('Reward performance graph each episode\n' + getTitleString())
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.legend()
@@ -110,7 +120,7 @@ def plotPerformanceBank(name='performance_bank_plot'):
 
     plt.plot(entire_bank_plot_steps[:len(entire_bank_accumulative)],
              entire_bank_accumulative)
-    plt.title('Reward performance graph entire run')
+    plt.title('Reward performance graph entire run\n' + getTitleString())
     plt.xlabel('Steps')
     plt.ylabel('Accumulated reward')
     plt.savefig('Images/Entire_run.png')
@@ -136,7 +146,7 @@ def plotPerformanceDelSteps(name='performance_del_steps_plot'):
                 snapshot_delivery_tracker[j] = snapshot_delivery_tracker[j-1] + incre
             last_pos = i
     plt.plot(snapshot_delivery_plot_steps, snapshot_delivery_tracker)
-    plt.title('Blocks delivered performance graph')
+    plt.title('Blocks delivered performance graph\n' + getTitleString())
     plt.xlabel('Steps')
     plt.ylabel('Block delivered')
     plt.savefig('Images/%s.png' % name)
@@ -169,7 +179,8 @@ def getFloat(name):
     return val
 
 def main():
-    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc, alpha, gamma, epsilon, episode, world
+    global fourth_expm, watch, pit_stop, drop_off_loc, pick_up_loc
+    global alpha, gamma, epsilon, episode, world, method, policy
     default = getAcceptedInput("Use default (Q_LEARNING, PEXPLOIT, no monitor, plot, no asking for continue)?"
                                "\n(yes/no): ", ['yes', 'no'], [True, False])
     policy = ''
@@ -245,11 +256,11 @@ def main():
     # update final q_table with no block
     if fourth_expm:
         vis_objs['q_table_no_block'].visualize_gen(h, w)
-    fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y)
+    fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y, is_fillQ=True)
     # update final q_table with block
     if fourth_expm:
         vis_objs['q_table_with_block'].visualize_gen(h, w)
-    fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y)
+    fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y, is_fillQ=True)
     # update agent position
     if has_block:
         putAgent(h, w, q_table, world, vis_objs['q_table_with_block'], has_block, x, y, start_x, start_y, 'ab')
@@ -275,7 +286,7 @@ def applyAction(action, state):
             drop_off_loc.remove((x, y))
             # RECORD FIRST TIME A DROP OFF IS FULL
             if episode == 1 and len(drop_off_loc) == 3:
-                fillQValues(h, w, q_table, world, vis_objs['first_drop_off_full'], False, start_x, start_y)
+                fillQValues(h, w, q_table, world, vis_objs['first_drop_off_full'], False, start_x, start_y, is_fillQ=True)
         has_block = False
     elif action == 'p':
         world[(x, y)]['no_of_blocks'] -= 1
@@ -308,6 +319,12 @@ def Q(state, action):
 def maxQ(state, actions):
     bestAction = bestValidAction(state, actions)
     return q_table[state][actionToIndex(bestAction)]
+
+def chooseRandomAction(valid_actions):
+    if (valid_actions[0] == "d"): return ["d", 13]
+    if (valid_actions[0] == "p"): return ["p", 13]
+    index = randint(0, len(valid_actions) - 1)
+    return [valid_actions[index], -1]
 
 
 def exploitAction(state, valid_actions, epsilon):
@@ -381,14 +398,16 @@ def doSteps(steps, policy, method):
         elif method == "SARSA":
             q_table[state][actionToIndex(action)] = sarsa(state, action, reward, next_state, next_actions, policy)
 
+        world[(x, y)]['direction'] = action
+
         # RESET Q_VALUES FOR DELI AND PICK SPOT WHEN FULL AND EMPTY
         '''
         if action == 'd':
             if world[(x, y)]['no_of_blocks'] == 4:
-                q_table[state][5] = -9
+                q_table[state][5] = 0
         elif action == 'p':
             if world[(x, y)]['no_of_blocks'] == 0:
-                q_table[state][4] = -9
+                q_table[state][4] = 0
         '''
         # keep track of prev state for step visualize part
         prev_x = x
@@ -408,7 +427,7 @@ def doSteps(steps, policy, method):
             regBankAccount()
             # RECORD FIRST TERMINATE
             if episode == 1:
-                fillQValues(h, w, q_table, world, vis_objs['first_terminate'], False, start_x, start_y)
+                fillQValues(h, w, q_table, world, vis_objs['first_terminate'], False, start_x, start_y, is_fillQ=True)
             # ------------------------------
 
             print("Terminal state reached")
@@ -431,11 +450,12 @@ def doSteps(steps, policy, method):
                 if not getAcceptedInput("Continue?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     episode += 1
                     break
+                watch = getAcceptedInput("Continue monitoring agent?\n(yes/no): ", ['yes', 'no'], [True, False])
             if pit_stop:
                 if getAcceptedInput("Take a snapshot?\n(yes/no): ", ['yes', 'no'], [True, False]):
                     updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
-                    fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y)
-                    fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y)
+                    fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y, is_fillQ=True)
+                    fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y, is_fillQ=True)
                     if has_block:
                         putAgent(h, w, q_table, world, vis_objs['q_table_with_block'],
                                  has_block, x, y, start_x, start_y, 'ab')
@@ -451,6 +471,21 @@ def doSteps(steps, policy, method):
                     episode += 1
                     break
                 watch = getAcceptedInput("Monitor agent?\n(yes/no): ", ['yes', 'no'], [True, False])
+            if fourth_expm and episode == 2:
+                updateWorld(h, w, world, vis_objs['world_vl'], start_x, start_y)
+                fillQValues(h, w, q_table, world, vis_objs['q_table_no_block'], False, start_x, start_y, is_fillQ=True)
+                fillQValues(h, w, q_table, world, vis_objs['q_table_with_block'], True, start_x, start_y, is_fillQ=True)
+                if has_block:
+                    putAgent(h, w, q_table, world, vis_objs['q_table_with_block'],
+                             has_block, x, y, start_x, start_y, 'ab')
+                else:
+                    putAgent(h, w, q_table, world, vis_objs['q_table_no_block'],
+                             has_block, x, y, start_x, start_y, 'a')
+                vis_objs['q_table_with_block'].snapshot('E%d_q_table_with_block_4thexpm' % episode)
+                vis_objs['q_table_no_block'].snapshot('E%d_q_table_no_block_4thexpm' % episode)
+                vis_objs['world_vl'].snapshot('E%d_world_4thexpm' % episode)
+                plotPerformanceBank('E%d_performance_bank_plot_4thexpm' % episode)
+                plotPerformanceDelSteps('E%d_performance_del_steps_plot_4thexpm' % episode)
 
             if fourth_expm and episode >= 2:
                 pick_up_loc = [(0, 2), (2, 0)]
@@ -487,7 +522,7 @@ def doSteps(steps, policy, method):
                     fillQValues(h, w, q_table, world, vis_objs['agent_monitor'], has_block, start_x, start_y)
                     ntw = False
                 updateCell(h, w, q_table, world, vis_objs['agent_monitor'],
-                           has_block, prev_x, prev_y, start_x, start_y)
+                           has_block, prev_x, prev_y, start_x, start_y, direction=action, monitor=True)
                 putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'ab')
             else:
                 ntw = True
@@ -495,7 +530,7 @@ def doSteps(steps, policy, method):
                     fillQValues(h, w, q_table, world, vis_objs['agent_monitor'], has_block, start_x, start_y)
                     wtn = False
                 updateCell(h, w, q_table, world, vis_objs['agent_monitor'],
-                           has_block, prev_x, prev_y, start_x, start_y)
+                           has_block, prev_x, prev_y, start_x, start_y, direction=action, monitor=True)
                 putAgent(h, w, q_table, world, vis_objs['agent_monitor'], has_block, x, y, start_x, start_y, 'a')
 
             img = cv.imread('Images/agent_monitor.png')

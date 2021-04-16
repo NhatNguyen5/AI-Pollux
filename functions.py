@@ -24,12 +24,6 @@ def getNextCoords(action, world, x, y):
     if (action == 'd' or action == 'p'): return [x, y]
     return world[(x, y)][action]
 
-def chooseRandomAction(valid_actions):
-    if (valid_actions[0] == "d"): return ["d", 13]
-    if (valid_actions[0] == "p"): return ["p", 13]
-    index = randint(0, len(valid_actions) - 1)
-    return [valid_actions[index], -1]
-
 
 def actionToIndex(action):
     if action == 'north': n = 0

@@ -18,6 +18,7 @@ def updateWorld(h, w, world, world_vl, x, y):
     for r in range(h):
         for c in range(w):
             ss = world[(c, r)]['step_scores']
+            direction = world[(c, r)]['direction']
             world_vl.fill_block(world[(c, r)]['coor'], (3*ss + 128, 2*ss + 128, ss + 128))
             if world[(c, r)]['action'] == 'd': world_vl.fill_block(world[(c, r)]['coor'], 'forestgreen')
             if world[(c, r)]['action'] == 'p': world_vl.fill_block(world[(c, r)]['coor'], 'dodgerblue')
@@ -26,6 +27,7 @@ def updateWorld(h, w, world, world_vl, x, y):
                 world_vl.write_block(world[(x, y)]['coor'], 'start', 'indigo')
             else:
                 world_vl.write_block(world[(c, r)]['coor'], world[(c, r)]['action'], 'white')
+            world_vl.put_arrow(direction, (c, r), 'black')
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 15)
             if world[(c, r)]['action'] == 'd' or world[(c, r)]['action'] == 'p':
                 world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['no_of_blocks']), 'black', pos='s')
@@ -47,25 +49,27 @@ def initQTableWorld(h, w, world, world_vl, x, y):
             world_vl.write_block(world[(c, r)]['coor'], str(world[(c, r)]['coor']), 'black', 'n', 9, offset_u=8)
     print('Done init Q table')
 
-def fillQValues(h, w, q_table, world, world_vl, has_block, start_x, start_y):
+def fillQValues(h, w, q_table, world, world_vl, has_block, start_x, start_y, is_fillQ=False):
     for r in range(w):
         for c in range(h):
-            updateCell(h, w, q_table, world, world_vl, has_block, r, c, start_x, start_y, True)
+            direction = world[(r, c)]['direction']
+            updateCell(h, w, q_table, world, world_vl, has_block, r, c, start_x, start_y, is_fillQ=is_fillQ, direction=direction)
     print('Done filling Q values')
 
 def putAgent(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y, agent_name='a'):
     updateCell(h, w, q_table, world, world_vl, has_block, x, y, start_x, start_y)
     world_vl.write_block(world[(x, y)]['coor'], str(agent_name), 'red', font_s=20)
 
-def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_x, start_y, is_fillQ=False):
+def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_x, start_y, direction='', is_fillQ=False, monitor=False):
     # actions = ['n', 's', 'e', 'w']
     actions = []
     q_offset = 0
     ss = world[(prev_x, prev_y)]['step_scores']
-    if is_fillQ:
-        # world_vl.fill_block(world[(prev_x, prev_y)]['coor'], world_vl.get_color(prev_x, prev_y))
-        world_vl.fill_block(world[(prev_x, prev_y)]['coor'], (3*ss + 128, 2*ss + 128, ss + 128))
-    else:
+    if is_fillQ and not monitor:
+        world_vl.fill_block(world[(prev_x, prev_y)]['coor'], (3*ss + 105, 2*ss + 105, ss + 105))
+    elif not is_fillQ and not monitor:
+        world_vl.fill_block(world[(prev_x, prev_y)]['coor'], world_vl.get_color(prev_x, prev_y))
+    elif not is_fillQ and monitor:
         world_vl.fill_block(world[(prev_x, prev_y)]['coor'], pathen(prev_x, prev_y, world_vl))
     if world[(prev_x, prev_y)]['action'] == 'd': world_vl.fill_block(world[(prev_x, prev_y)]['coor'], 'forestgreen')
     if world[(prev_x, prev_y)]['action'] == 'p': world_vl.fill_block(world[(prev_x, prev_y)]['coor'], 'dodgerblue')
@@ -78,6 +82,7 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
         world_vl.write_block(world[(prev_x, prev_y)]['coor'], world[(prev_x, prev_y)]['action'], 'white')
         world_vl.write_block(world[(prev_x, prev_y)]['coor'],
                              str(world[(prev_x, prev_y)]['coor']), 'black', 'n', 9, offset_u=8)
+    world_vl.put_arrow(direction, (prev_x, prev_y), 'black')
     if world[(prev_x, prev_y)]['action'] == 'd' or world[(prev_x, prev_y)]['action'] == 'p':
         world_vl.write_block(world[(prev_x, prev_y)]['coor'],
                              str(world[(prev_x, prev_y)]['no_of_blocks']), 'black', pos='s', font_s=9, offset_u=10)
@@ -112,7 +117,6 @@ def updateCell(h, w, q_table, world, world_vl, has_block, prev_x, prev_y, start_
             world_vl.write_block((prev_x, prev_y), str(round(q_table[state][i], 2)), 'maroon',
                                  pos=a, font_s=10)
 
-
 def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, world_vl, world):
     loc_list = drop_off_loc + pick_up_loc
     actions = []
@@ -120,12 +124,14 @@ def updateDropAndPickSpots(h, w, q_table, has_block, drop_off_loc, pick_up_loc, 
     for c in loc_list:
         if world[c]['action'] == 'd': world_vl.fill_block(world[c]['coor'], 'forestgreen')
         if world[c]['action'] == 'p': world_vl.fill_block(world[c]['coor'], 'dodgerblue')
+        direction = world[c]['direction']
         world_vl.put_x(c, 'purple')
         world_vl.write_block(world[c]['coor'], world[c]['action'], 'white')
         world_vl.write_block(world[c]['coor'],
                              str(world[c]['coor']), 'black', 'n', 9, offset_u=8)
         world_vl.write_block(world[c]['coor'], str(world[c]['no_of_blocks']), 'black',
                              pos='s', font_s=9, offset_u=10)
+        world_vl.put_arrow(direction, c, 'black')
         if (has_block == True):
             q_offset = w * h
         state = getStateFromCoords(c[1], c[0]) + q_offset
